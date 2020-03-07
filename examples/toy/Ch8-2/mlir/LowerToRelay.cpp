@@ -29,7 +29,7 @@
 // #include "mlir/Dialect/AffineOps/AffineOps.h"
 // #include "mlir/Dialect/StandardOps/Ops.h"
 #include "mlir/Dialect/AffineOps/AffineOps.h"
-#include "mlir/Dialect/StandardOps/Ops.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "llvm/ADT/Sequence.h"
@@ -70,10 +70,10 @@ struct BinaryOpLowering : public ConversionPattern {
   matchAndRewrite(Operation *op, ArrayRef<Value *> operands,
                   ConversionPatternRewriter &rewriter) const final {
     auto loc = op->getLoc();
-    auto type = op->getResult(0)->getType();
-  auto binaryopRelay = rewriter.create<LoweredBinaryOp>(loc, type,operands[0],operands[1]);
-      rewriter.replaceOp(op, {binaryopRelay});
-      //rewriter.eraseOp(op);
+    auto type = op->getResult(0).getType();
+    auto binaryopRelay = rewriter.create<LoweredBinaryOp>(loc, type,operands[0],operands[1]);
+    rewriter.replaceOp(op, {binaryopRelay});
+    //rewriter.eraseOp(op);
     return matchSuccess();
   }
 };
@@ -148,7 +148,7 @@ struct TransposeOpLowering : public ConversionPattern {
   matchAndRewrite(Operation *op, ArrayRef<Value *> operands,
                   ConversionPatternRewriter &rewriter) const final {
                     auto loc = op->getLoc();
-                    auto type = op->getResult(0)->getType();
+                    auto type = op->getResult(0).getType();
     auto transposeRelay =  rewriter.create<relay::TransposeOp>(loc,type,operands[0]);
      //rewriter.replaceOp(op, {transposeRelay.getOperand()}, {transposeRelay});
      rewriter.replaceOp(op,{transposeRelay});
