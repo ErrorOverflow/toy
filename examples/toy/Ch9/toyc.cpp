@@ -14,6 +14,8 @@
 #include "toy/MLIRGen.h"
 #include "toy/Parser.h"
 #include "toy/Passes.h"
+#include "toy/RelayDialect.h"
+#include "toy/RelayIR.h"
 
 #include "mlir/Analysis/Verifier.h"
 #include "mlir/ExecutionEngine/ExecutionEngine.h"
@@ -58,9 +60,11 @@ enum Action {
   None,
   DumpAST,
   DumpMLIR,
+  DumpMLIRRelay,
   DumpMLIRAffine,
   DumpMLIRLLVM,
   DumpLLVMIR,
+  DumpRelayIR,
   RunJIT
 };
 }
@@ -212,6 +216,11 @@ int dumpLLVMIR(mlir::ModuleOp module) {
   return 0;
 }
 
+int dumpRelayIR(mlir::ModuleOp module){
+  return 0;
+  //return mlir::translateModuleToRelayIR(module);
+}
+
 int runJit(mlir::ModuleOp module) {
   // Initialize LLVM targets.
   llvm::InitializeNativeTarget();
@@ -250,6 +259,7 @@ int main(int argc, char **argv) {
 
   // Register our Dialect with MLIR.
   mlir::registerDialect<mlir::toy::ToyDialect>();
+  mlir::registerDialect<mlir::relay::RelayDialect>();
 
   mlir::MLIRContext context;
   mlir::OwningModuleRef module;
