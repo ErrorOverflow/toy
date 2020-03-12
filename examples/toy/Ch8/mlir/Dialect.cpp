@@ -55,7 +55,7 @@ struct ToyInlinerInterface : public DialectInlinerInterface {
   /// Handle the given inlined terminator(toy.return) by replacing it with a new
   /// operation as necessary.
   void handleTerminator(Operation *op,
-                        ArrayRef<Value *> valuesToRepl) const final {
+                        ArrayRef<Value> valuesToRepl) const final {
     // Only "toy.return" needs to be handled here.
     auto returnOp = cast<ReturnOp>(op);
 
@@ -107,14 +107,14 @@ static void buildConstantOp(mlir::Builder *builder, mlir::OperationState &state,
 
 /// Infer the output shape of the CastOp, this is required by the shape
 /// inference interface.
-void CastOp::inferShapes() { getResult()->setType(getOperand()->getType()); }
+void CastOp::inferShapes() { getResult().setType(getOperand().getType()); }
 
 /// Verifier for the constant operation. This corresponds to the `::verify(...)`
 /// in the op definition.
 static mlir::LogicalResult verify(ConstantOp op) {
   // If the return type of the constant is not an unranked tensor, the shape
   // must match the shape of the attribute holding the data.
-  auto resultType = op.getResult()->getType().cast<RankedTensorType>();
+  auto resultType = op.getResult().getType().cast<RankedTensorType>();
   if (!resultType)
     return success();
 
@@ -148,7 +148,7 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
 
 /// Infer the output shape of the AddOp, this is required by the shape inference
 /// interface.
-void AddOp::inferShapes() { getResult()->setType(getOperand(0)->getType()); }
+void AddOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 static void buildGenericCallOp(mlir::Builder *builder,
                                mlir::OperationState &state, StringRef callee,
@@ -177,7 +177,7 @@ static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
 
 /// Infer the output shape of the MulOp, this is required by the shape inference
 /// interface.
-void MulOp::inferShapes() { getResult()->setType(getOperand(0)->getType()); }
+void MulOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 static mlir::LogicalResult verify(ReturnOp op) {
   // We know that the parent operation is a function, because of the 'HasParent'
@@ -221,13 +221,13 @@ static void buildTransposeOp(mlir::Builder *builder,
 }
 
 void TransposeOp::inferShapes() {
-  auto arrayTy = getOperand()->getType().cast<RankedTensorType>();
+  auto arrayTy = getOperand().getType().cast<RankedTensorType>();
   SmallVector<int64_t, 2> dims(llvm::reverse(arrayTy.getShape()));
-  getResult()->setType(RankedTensorType::get(dims, arrayTy.getElementType()));
+  getResult().setType(RankedTensorType::get(dims, arrayTy.getElementType()));
 }
 
 static mlir::LogicalResult verify(TransposeOp op) {
-  auto inputType = op.getOperand()->getType().dyn_cast<RankedTensorType>();
+  auto inputType = op.getOperand().getType().dyn_cast<RankedTensorType>();
   auto resultType = op.getType().dyn_cast<RankedTensorType>();
   if (!inputType || !resultType)
     return mlir::success();
