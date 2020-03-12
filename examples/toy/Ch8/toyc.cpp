@@ -284,16 +284,12 @@ int main(int argc, char **argv) {
 
   if(emitAction == Action::DumpRelayIR){
     printf("\n");
-    return 0;
-    //return dumpRelayIR(*module);
-  }
-      
-    
+    return dumpRelayIR(*module);
+  } 
 
   // Otherwise, we must be running the jit.
   if (emitAction == Action::RunJIT)
     return runJit(*module);
-
 
   llvm::errs() << "No action specified (parsing only?), use -emit=<action>\n";
   return -1;
