@@ -100,9 +100,9 @@ std::unique_ptr<toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
     return nullptr;
   }
   auto buffer = FileOrErr.get()->getBuffer();
-  LexerBuffer lexer(buffer.begin(), buffer.end(), filename);
+  LexerBuffer lexer(buffer.begin(), buffer.end(), std::string(filename));
   Parser parser(lexer);
-  return parser.ParseModule();
+  return parser.parseModule();
 }
 
 int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module) {

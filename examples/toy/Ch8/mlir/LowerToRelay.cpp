@@ -48,8 +48,8 @@ using namespace mlir;
 /// to the operands of the input operation, and the set of loop induction
 /// variables for the iteration. It returns a value to store at the current
 /// index of the iteration.
-using RelayFn = function_ref<Value *(PatternRewriter &rewriter,
-                                             ArrayRef<Value *> TensorOperands)>;
+using RelayFn = function_ref<Value (PatternRewriter &rewriter,
+                                             ArrayRef<Value> TensorOperands)>;
 
   // Generate a call to the processing function with the rewriter, the memref
   // operands, and the loop induction variables. This function will return the
@@ -67,10 +67,10 @@ struct BinaryOpLowering : public ConversionPattern {
       : ConversionPattern(BinaryOp::getOperationName(), 1, ctx) {}
 
   PatternMatchResult
-  matchAndRewrite(Operation *op, ArrayRef<Value *> operands,
+  matchAndRewrite(Operation *op, ArrayRef<Value> operands,
                   ConversionPatternRewriter &rewriter) const final {
     auto loc = op->getLoc();
-    auto type = op->getResult(0)->getType();
+    auto type = op->getResult(0).getType();
   auto binaryopRelay = rewriter.create<LoweredBinaryOp>(loc, type,operands[0],operands[1]);
       rewriter.replaceOp(op, {binaryopRelay});
       //rewriter.eraseOp(op);
@@ -145,10 +145,10 @@ struct TransposeOpLowering : public ConversionPattern {
       : ConversionPattern(toy::TransposeOp::getOperationName(), 1, ctx) {}
 
   PatternMatchResult
-  matchAndRewrite(Operation *op, ArrayRef<Value *> operands,
+  matchAndRewrite(Operation *op, ArrayRef<Value> operands,
                   ConversionPatternRewriter &rewriter) const final {
                     auto loc = op->getLoc();
-                    auto type = op->getResult(0)->getType();
+                    auto type = op->getResult(0).getType();
     auto transposeRelay =  rewriter.create<relay::TransposeOp>(loc,type,operands[0]);
      //rewriter.replaceOp(op, {transposeRelay.getOperand()}, {transposeRelay});
      rewriter.replaceOp(op,{transposeRelay});
@@ -161,12 +161,12 @@ struct PrintOpLowering : public ConversionPattern {
       : ConversionPattern(toy::PrintOp::getOperationName(), 1, ctx) {}
 
   PatternMatchResult
-  matchAndRewrite(Operation *op, ArrayRef<Value *> operands,
+  matchAndRewrite(Operation *op, ArrayRef<Value> operands,
                   ConversionPatternRewriter &rewriter) const final {
-     auto loc = op->getLoc();
-    auto printopRelay = rewriter.create<relay::PrintOp>(loc,operands[0]);
+    auto loc = op->getLoc();
+    //auto printopRelay = rewriter.create<relay::PrintOp>(loc,operands[0]);
     rewriter.eraseOp(op);
-   // rewriter.replaceOp(op, {printopRelay.getOperand()}, {printopRelay});
+    //rewriter.replaceOp(op, {printopRelay.getOperand()}, {printopRelay});
 
     return matchSuccess();
   }

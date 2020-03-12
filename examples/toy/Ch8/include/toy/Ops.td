@@ -110,7 +110,7 @@ def AddOp : Toy_Op<"add",
 
   // Allow building an AddOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value *lhs, Value *rhs", [{
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
       buildAddOp(b, result, lhs, rhs);
     }]
   >];
@@ -164,7 +164,7 @@ def GenericCallOp : Toy_Op<"generic_call",
   let builders = [
     // Build a constant with a given constant tensor value.
     OpBuilder<"Builder *builder, OperationState &result, "
-              "StringRef callee, ArrayRef<Value *> arguments", [{
+              "StringRef callee, ArrayRef<Value> arguments", [{
       buildGenericCallOp(builder, result, callee, arguments);
     }]>
   ];
@@ -183,7 +183,7 @@ def MulOp : Toy_Op<"mul",
 
   // Allow building a MulOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value *lhs, Value *rhs", [{
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
       buildMulOp(b, result, lhs, rhs);
     }]
   >];
@@ -263,7 +263,7 @@ def TransposeOp : Toy_Op<"transpose",
 
   // Allow building a TransposeOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value *input", [{
+    OpBuilder<"Builder *b, OperationState &result, Value input", [{
       buildTransposeOp(b, result, input);
     }]
   >];

@@ -57,7 +57,7 @@ namespace{
     public:
     int num=0;
     int tmp_num=0;
-    std::vector<mlir::Value *> each_result;
+    std::vector<mlir::Value> each_result;
     std::vector<std::string> each_name;
 
   void runOnFunction() override {
@@ -70,8 +70,8 @@ namespace{
             auto constantValue = constantop.value();
             auto valueIt = constantValue.getValues<double>().begin();
             mlir::Operation * oop = constantop;
-             auto tensorType = (*oop->result_type_begin()).cast<mlir::TensorType>();
-             auto shape = tensorType.getShape();
+            auto tensorType = (*oop->result_type_begin()).cast<mlir::TensorType>();
+            auto shape = tensorType.getShape();
             int len = shape.size();
             int dataNum=1;
             std::vector<int> shape_vector;

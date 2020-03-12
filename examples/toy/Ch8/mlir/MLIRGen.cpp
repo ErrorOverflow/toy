@@ -220,7 +220,7 @@ private:
   /// expected to have been declared and so should have a value in the symbol
   /// table, otherwise emit an error and return nullptr.
   mlir::Value mlirGen(VariableExprAST &expr) {
-    if (auto *variable = symbolTable.lookup(expr.getName()))
+    if (auto variable = symbolTable.lookup(expr.getName()))
       return variable;
 
     emitError(loc(expr.loc()), "error: unknown variable '")
@@ -316,7 +316,7 @@ private:
     // Codegen the operands first.
     SmallVector<mlir::Value, 4> operands;
     for (auto &expr : call.getArgs()) {
-      auto *arg = mlirGen(*expr);
+      auto arg = mlirGen(*expr);
       if (!arg)
         return nullptr;
       operands.push_back(arg);
@@ -342,7 +342,7 @@ private:
   /// Emit a print expression. It emits specific operations for two builtins:
   /// transpose(x) and print(x).
   mlir::LogicalResult mlirGen(PrintExprAST &call) {
-    auto *arg = mlirGen(*call.getArg());
+    auto arg = mlirGen(*call.getArg());
     if (!arg)
       return mlir::failure();
 
