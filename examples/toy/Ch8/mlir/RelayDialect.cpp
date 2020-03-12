@@ -141,7 +141,7 @@ static mlir::LogicalResult verify(ConstantOp op) {
 }
 
 static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value *lhs, mlir::Value *rhs) {
+                       mlir::Value lhs, mlir::Value rhs) {
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands({lhs, rhs});
 }
@@ -157,7 +157,7 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
 
 
 static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value *lhs, mlir::Value *rhs) {
+                       mlir::Value lhs, mlir::Value rhs) {
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands({lhs, rhs});
 }
@@ -202,7 +202,7 @@ static mlir::LogicalResult verify(ReturnOp op) {
 }
 
 static void buildTransposeOp(mlir::Builder *builder,
-                             mlir::OperationState &state, mlir::Value *value) {
+                             mlir::OperationState &state, mlir::Value value) {
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands(value);
 }
@@ -229,7 +229,7 @@ static mlir::LogicalResult verify(TransposeOp op) {
 }
 
 static void buildPrintOp(mlir::Builder *builder,
-                             mlir::OperationState &state, mlir::Value *value) {
+                             mlir::OperationState &state, mlir::Value value) {
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands(value);
 }

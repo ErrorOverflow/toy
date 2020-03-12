@@ -62,7 +62,7 @@ struct ToyInlinerInterface : public DialectInlinerInterface {
     // Replace the values directly with the return operands.
     assert(returnOp.getNumOperands() == valuesToRepl.size());
     for (const auto &it : llvm::enumerate(returnOp.getOperands()))
-      valuesToRepl[it.index()]->replaceAllUsesWith(it.value());
+      valuesToRepl[it.index()].replaceAllUsesWith(it.value());
   }
 
   /// Attempts to materialize a conversion for a type mismatch between a call
@@ -70,7 +70,7 @@ struct ToyInlinerInterface : public DialectInlinerInterface {
   /// operation that takes 'input' as the only operand, and produces a single
   /// result of 'resultType'. If a conversion can not be generated, nullptr
   /// should be returned.
-  Operation *materializeCallConversion(OpBuilder &builder, Value *input,
+  Operation *materializeCallConversion(OpBuilder &builder, Value input,
                                        Type resultType,
                                        Location conversionLoc) const final {
     return builder.create<CastOp>(conversionLoc, resultType, input);
@@ -141,7 +141,7 @@ static mlir::LogicalResult verify(ConstantOp op) {
 }
 
 static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value *lhs, mlir::Value *rhs) {
+                       mlir::Value lhs, mlir::Value rhs) {
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands({lhs, rhs});
 }
@@ -152,7 +152,7 @@ void AddOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 static void buildGenericCallOp(mlir::Builder *builder,
                                mlir::OperationState &state, StringRef callee,
-                               ArrayRef<mlir::Value *> arguments) {
+                               ArrayRef<mlir::Value> arguments) {
   // Generic call always returns an unranked Tensor initially.
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands(arguments);
@@ -170,7 +170,7 @@ CallInterfaceCallable GenericCallOp::getCallableForCallee() {
 Operation::operand_range GenericCallOp::getArgOperands() { return inputs(); }
 
 static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value *lhs, mlir::Value *rhs) {
+                       mlir::Value lhs, mlir::Value rhs) {
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands({lhs, rhs});
 }
@@ -215,7 +215,7 @@ static mlir::LogicalResult verify(ReturnOp op) {
 }
 
 static void buildTransposeOp(mlir::Builder *builder,
-                             mlir::OperationState &state, mlir::Value *value) {
+                             mlir::OperationState &state, mlir::Value value) {
   state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
   state.addOperands(value);
 }

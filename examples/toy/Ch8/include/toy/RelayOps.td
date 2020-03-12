@@ -104,7 +104,7 @@ def AddOp : Relay_Op<"add"> {
 
   // Allow building an AddOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value *lhs, Value *rhs", [{
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
       buildAddOp(b, result, lhs, rhs);
     }]
   >];
@@ -124,7 +124,7 @@ def MulOp : Relay_Op<"mul"> {
 
   // Allow building a MulOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value *lhs, Value *rhs", [{
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
       buildMulOp(b, result, lhs, rhs);
     }]
   >];
@@ -138,7 +138,7 @@ def PrintOp : Relay_Op<"print"> {
 
   // Allow building a TransposeOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value *input", [{
+    OpBuilder<"Builder *b, OperationState &result, Value input", [{
       buildPrintOp(b, result, input);
     }]
   >];
@@ -206,7 +206,7 @@ def TransposeOp : Relay_Op<"transpose"> {
 
   // Allow building a TransposeOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value *input", [{
+    OpBuilder<"Builder *b, OperationState &result, Value input", [{
       buildTransposeOp(b, result, input);
     }]
   >];
