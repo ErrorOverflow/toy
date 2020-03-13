@@ -61,7 +61,7 @@ namespace {
         std::vector <std::string> each_name;
 
         void runOnFunction() override {
-            auto function = getFunction();
+            //auto function = getFunction();
             printf("from tvm import relay\nimport tvm\nimport numpy as np\nfrom tvm.contrib import graph_runtime\n");
             printf("if __name__ == \"__main__\":\n");
             for (mlir::Block &block : getFunction()) {
@@ -72,13 +72,13 @@ namespace {
                         mlir::Operation *oop = constantop;
                         auto tensorType = (*oop->result_type_begin()).cast<mlir::TensorType>();
                         auto shape = tensorType.getShape();
-                        int len = shape.size();
+                        //int len = shape.size();
                         int dataNum = 1;
                         std::vector<int> shape_vector;
                         printf("    var%d = relay.var(\"var%d\",shape=(", num, num);
-                        for (int i = 0; i < shape.size(); i++) {
-                            if (i != shape.size() - 1) printf("%d,", shape[i]);
-                            else printf("%d),dtype=\"float64\")\n", shape[i]);
+                        for (size_t i = 0; i < shape.size(); i++) {
+                            if (i != shape.size() - 1) printf("%ld,", shape[i]);
+                            else printf("%ld),dtype=\"float64\")\n", shape[i]);
                             dataNum *= shape[i];
                             shape_vector.push_back(shape[i]);
                         }
@@ -112,8 +112,8 @@ namespace {
                     }
                     if (op.getName().getStringRef() == "relay.transpose") {
                         printf("    tmp%d = relay.transpose(", tmp_num);
-                        int len = each_result.size();
-                        int i;
+                        size_t len = each_result.size();
+                        size_t i;
                         for (i = 0; i < len; i++) {
                             if (each_result[i] == op.getOperand(0)) break;
                         }
@@ -127,8 +127,8 @@ namespace {
 
                     } else if (op.getName().getStringRef() == "relay.mul") {
                         printf("    tmp%d = relay.multiply(", tmp_num);
-                        int len = each_result.size();
-                        int i;
+                        size_t len = each_result.size();
+                        size_t i;
                         for (i = 0; i < len; i++) {
                             if (each_result[i] == op.getOperand(0)) break;
                         }
@@ -147,8 +147,8 @@ namespace {
 
                     } else if (op.getName().getStringRef() == "relay.add") {
                         printf("    tmp%d = relay.add(", tmp_num);
-                        int len = each_result.size();
-                        int i;
+                        size_t len = each_result.size();
+                        size_t i;
                         for (i = 0; i < len; i++) {
                             if (each_result[i] == op.getOperand(0)) break;
                         }
@@ -171,8 +171,8 @@ namespace {
                             if (i != num - 1) printf(",");
                             else printf("],");
                         }
-                        int len = each_result.size();
-                        int i;
+                        size_t len = each_result.size();
+                        size_t i;
                         for (i = 0; i < len; i++) {
                             if (each_result[i] == op.getOperand(0)) break;
                         }
@@ -215,11 +215,11 @@ namespace {
 //   });
         }
 
-        void getDenseElement(std::vector <std::string> &result, std::vector<int> shape, int num) {
+        void getDenseElement(std::vector <std::string> &result, std::vector<int> shape, size_t num) {
             if (num == shape.size()) return;
             getDenseElement(result, shape, num + 1);
             std::vector <std::string> tmp;
-            for (int i = 0; i < result.size() / shape[num] + 1; i++) {
+            for (size_t i = 0; i < result.size() / shape[num] + 1; i++) {
                 std::string str = "[";
                 for (int j = 0; j < shape[num]; j++) {
                     int index = shape[num] * i + j;

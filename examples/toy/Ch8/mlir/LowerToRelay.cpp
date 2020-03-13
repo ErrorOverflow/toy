@@ -164,7 +164,7 @@ namespace {
         PatternMatchResult
         matchAndRewrite(Operation *op, ArrayRef <Value> operands,
                         ConversionPatternRewriter &rewriter) const final {
-            auto loc = op->getLoc();
+            //auto loc = op->getLoc();
             //auto printopRelay = rewriter.create<relay::PrintOp>(loc,operands[0]);
             rewriter.eraseOp(op);
             //rewriter.replaceOp(op, {printopRelay.getOperand()}, {printopRelay});
