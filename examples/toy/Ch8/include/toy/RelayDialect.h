@@ -29,27 +29,28 @@
 #include "toy/ShapeInferenceInterface.h"
 
 namespace mlir {
-namespace relay {
+    namespace relay {
 
 /// This is the definition of the Toy dialect. A dialect inherits from
 /// mlir::Dialect and registers custom attributes, operations, and types (in its
 /// constructor). It can also override some general behavior exposed via virtual
 /// methods.
-class RelayDialect : public mlir::Dialect {
-public:
-  explicit RelayDialect(mlir::MLIRContext *ctx);
+        class RelayDialect : public mlir::Dialect {
+        public:
+            explicit RelayDialect(mlir::MLIRContext *ctx);
 
-  /// Provide a utility accessor to the dialect namespace. This is used by
-  /// several utilities for casting between dialects.
-  static llvm::StringRef getDialectNamespace() { return "relay"; }
-};
+            /// Provide a utility accessor to the dialect namespace. This is used by
+            /// several utilities for casting between dialects.
+            static llvm::StringRef getDialectNamespace() { return "relay"; }
+        };
 
 /// Include the auto-generated header file containing the declarations of the
 /// toy operations.
 #define GET_OP_CLASSES
+
 #include "toy/RelayOps.h.inc"
 
-} // end namespace relay
+    } // end namespace relay
 } // end namespace mlir
 
 #endif // MLIR_TUTORIAL_TOY_DIALECT_H_

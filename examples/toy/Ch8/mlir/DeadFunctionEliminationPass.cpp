@@ -44,25 +44,25 @@ namespace {
 /// inlining.
 /// TODO(riverriddle) This is only necessary because MLIR currently does not
 /// have generic DCE support for functions.
-class DeadFunctionEliminationPass
-    : public mlir::ModulePass<DeadFunctionEliminationPass> {
-public:
-  void runOnModule() override {
-    mlir::ModuleOp module = getModule();
-    mlir::SymbolTable moduleSymTable(module);
+    class DeadFunctionEliminationPass
+            : public mlir::ModulePass<DeadFunctionEliminationPass> {
+    public:
+        void runOnModule() override {
+            mlir::ModuleOp module = getModule();
+            mlir::SymbolTable moduleSymTable(module);
 
-    // Eliminate non-main functions.
-    auto mainFn = moduleSymTable.lookup<mlir::FuncOp>("main");
-    for (mlir::FuncOp func :
-         llvm::make_early_inc_range(module.getOps<mlir::FuncOp>())) {
-      if (func != mainFn)
-        func.erase();
-    }
-  }
-};
+            // Eliminate non-main functions.
+            auto mainFn = moduleSymTable.lookup<mlir::FuncOp>("main");
+            for (mlir::FuncOp func :
+                    llvm::make_early_inc_range(module.getOps<mlir::FuncOp>())) {
+                if (func != mainFn)
+                    func.erase();
+            }
+        }
+    };
 } // end anonymous namespace
 
 /// Create a pass that eliminates inlined functions in toy.
-std::unique_ptr<mlir::Pass> mlir::toy::createDeadFunctionEliminationPass() {
-  return std::make_unique<DeadFunctionEliminationPass>();
+std::unique_ptr <mlir::Pass> mlir::toy::createDeadFunctionEliminationPass() {
+    return std::make_unique<DeadFunctionEliminationPass>();
 }
