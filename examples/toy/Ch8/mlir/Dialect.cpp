@@ -161,6 +161,10 @@ static void buildGenericCallOp(mlir::Builder *builder,
     state.addAttribute("callee", builder->getSymbolRefAttr(callee));
 }
 
+/// Infer the output shape of the Conv1dOp, this is required by the shape inference
+/// interface.
+void Conv1dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
 /// Return the callee of the generic call operation, this is required by the
 /// call interface.
 CallInterfaceCallable GenericCallOp::getCallableForCallee() {
