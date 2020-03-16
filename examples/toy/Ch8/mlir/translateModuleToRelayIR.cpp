@@ -192,6 +192,24 @@ namespace {
                         printf("    module.run()\n");
                         printf("    out = module.get_output(0).asnumpy()\n");
                         printf("    print(out)\n");
+                    } else if (op.getName().getStringRef() == "relay.conv1d") {
+                        printf("    tmp%d = relay.conv1d(", tmp_num);
+                        size_t len = each_result.size();
+                        size_t i;
+                        for (i = 0; i < len; i++) {
+                            if (each_result[i] == op.getOperand(0)) break;
+                        }
+                        if (i == len) printf("error occured!\n");
+                        else printf("%s,", each_name[i].c_str());
+                        for (i = 0; i < len; i++) {
+                            if (each_result[i] == op.getOperand(1)) break;
+                        }
+                        if (i == len) printf("error occured!\n");
+                        else printf("%s)\n", each_name[i].c_str());
+                        each_result.push_back(op.getResult(0));
+                        std::string tmp = "tmp" + std::to_string(tmp_num);
+                        each_name.push_back(tmp);
+                        tmp_num++;
                     }
                     //printf("%s\n",opp.getName().getStringRef());
                 }

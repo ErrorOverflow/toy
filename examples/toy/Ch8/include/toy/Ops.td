@@ -285,7 +285,7 @@ def Conv1dOp : Toy_Op<"conv1d",
   // Allow building an AddOp with from the two input operands.
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildAddOp(b, result, lhs, rhs);
+      buildConv1dOp(b, result, lhs, rhs);
     }]
   >];
 }

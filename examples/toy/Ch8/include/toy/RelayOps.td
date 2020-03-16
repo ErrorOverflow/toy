@@ -110,8 +110,6 @@ def AddOp : Relay_Op<"add"> {
   >];
 }
 
-
-
 def MulOp : Relay_Op<"mul"> {
   let summary = "element-wise multiplication operation";
   let description = [{
@@ -126,6 +124,24 @@ def MulOp : Relay_Op<"mul"> {
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
       buildMulOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
+def Conv1dOp : Relay_Op<"conv1d"> {
+  let summary = "element-wise addition operation";
+  let description = [{
+    The "conv1d" operation performs element-wise addition between two tensors.
+    The shapes of the tensor operands are expected to match.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  // Allow building an AddOp with from the two input operands.
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildConv1dOp(b, result, lhs, rhs);
     }]
   >];
 }
@@ -214,5 +230,6 @@ def TransposeOp : Relay_Op<"transpose"> {
   // Invoke a static verify method to verify this transpose operation.
   let verifier = [{ return ::verify(*this); }];
 }
+
 
 #endif // Relay_OpS

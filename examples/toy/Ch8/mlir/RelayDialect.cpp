@@ -47,34 +47,6 @@ struct RelayInlinerInterface : public DialectInlinerInterface {
                          BlockAndValueMapping &) const final {
         return true;
     }
-
-    //===--------------------------------------------------------------------===//
-    // Transformation Hooks
-    //===--------------------------------------------------------------------===//
-
-    /// Handle the given inlined terminator(toy.return) by replacing it with a new
-    /// operation as necessary.
-    // void handleTerminator(Operation *op,
-    //                       ArrayRef<Value *> valuesToRepl) const final {
-    //   // Only "toy.return" needs to be handled here.
-    //   auto returnOp = cast<ReturnOp>(op);
-
-    //   // Replace the values directly with the return operands.
-    //   assert(returnOp.getNumOperands() == valuesToRepl.size());
-    //   for (const auto &it : llvm::enumerate(returnOp.getOperands()))
-    //     valuesToRepl[it.index()]->replaceAllUsesWith(it.value());
-    // }
-
-    /// Attempts to materialize a conversion for a type mismatch between a call
-    /// from this dialect, and a callable region. This method should generate an
-    /// operation that takes 'input' as the only operand, and produces a single
-    /// result of 'resultType'. If a conversion can not be generated, nullptr
-    /// should be returned.
-    // Operation *materializeCallConversion(OpBuilder &builder, Value *input,
-    //                                      Type resultType,
-    //                                      Location conversionLoc) const final {
-    //   return builder.create<CastOp>(conversionLoc, resultType, input);
-    // }
 };
 
 //===----------------------------------------------------------------------===//
@@ -159,6 +131,12 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
 
 
 static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands({lhs, rhs});

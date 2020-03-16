@@ -152,6 +152,14 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
 /// interface.
 void AddOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
+static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+void Conv1dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
 static void buildGenericCallOp(mlir::Builder *builder,
                                mlir::OperationState &state, StringRef callee,
                                ArrayRef <mlir::Value> arguments) {
@@ -160,10 +168,6 @@ static void buildGenericCallOp(mlir::Builder *builder,
     state.addOperands(arguments);
     state.addAttribute("callee", builder->getSymbolRefAttr(callee));
 }
-
-/// Infer the output shape of the Conv1dOp, this is required by the shape inference
-/// interface.
-void Conv1dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 /// Return the callee of the generic call operation, this is required by the
 /// call interface.
