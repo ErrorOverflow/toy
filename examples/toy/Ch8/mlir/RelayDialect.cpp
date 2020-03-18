@@ -79,10 +79,6 @@ static void buildConstantOp(mlir::Builder *builder, mlir::OperationState &state,
     ConstantOp::build(builder, state, dataType, dataAttribute);
 }
 
-/// Infer the output shape of the CastOp, this is required by the shape
-/// inference interface.
-//void CastOp::inferShapes() { getResult()->setType(getOperand()->getType()); }
-
 /// Verifier for the constant operation. This corresponds to the `::verify(...)`
 /// in the op definition.
 static mlir::LogicalResult verify(ConstantOp op) {
@@ -120,16 +116,6 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addOperands({lhs, rhs});
 }
 
-/// Infer the output shape of the AddOp, this is required by the shape inference
-/// interface.
-//void AddOp::inferShapes() { getResult()->setType(getOperand(0)->getType()); }
-
-
-
-/// Get the argument operands to the called function, this is required by the
-/// call interface.
-
-
 static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
@@ -141,10 +127,6 @@ static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands({lhs, rhs});
 }
-
-/// Infer the output shape of the MulOp, this is required by the shape inference
-/// interface.
-//void MulOp::inferShapes() { getResult()->setType(getOperand(0)->getType()); }
 
 static mlir::LogicalResult verify(ReturnOp op) {
     // We know that the parent operation is a function, because of the 'HasParent'
@@ -186,12 +168,6 @@ static void buildTransposeOp(mlir::Builder *builder,
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands(value);
 }
-
-// void TransposeOp::inferShapes() {
-//   auto arrayTy = getOperand()->getType().cast<RankedTensorType>();
-//   SmallVector<int64_t, 2> dims(llvm::reverse(arrayTy.getShape()));
-//   getResult()->setType(RankedTensorType::get(dims, arrayTy.getElementType()));
-// }
 
 static mlir::LogicalResult verify(TransposeOp op) {
     auto inputType = op.getOperand().getType().dyn_cast<RankedTensorType>();

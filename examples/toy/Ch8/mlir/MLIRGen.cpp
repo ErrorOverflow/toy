@@ -333,6 +333,15 @@ namespace {
                 return builder.create<TransposeOp>(location, operands[0]);
             }
 
+            if (callee == "conv1d") {
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.conv1d "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<Conv1dOp>(location, operands[0],operands[1]);
+            }
+
             // Otherwise this is a call to a user-defined function. Calls to ser-defined
             // functions are mapped to a custom call that takes the callee name as an
             // attribute.

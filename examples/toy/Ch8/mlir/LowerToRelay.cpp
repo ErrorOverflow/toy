@@ -80,7 +80,6 @@ namespace {
 
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
     using MulOpLowering = BinaryOpLowering<toy::MulOp, relay::MulOp>;
-    using Conv1dOpLowering = BinaryOpLowering<toy::Conv1dOp, relay::Conv1dOp>;
 
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Constant operations
@@ -96,25 +95,6 @@ namespace {
             auto constantRelay = rewriter.create<relay::ConstantOp>(loc, constantValue.getType(), constantValue);
             rewriter.replaceOp(op, {constantRelay});
             return matchSuccess();
-//     Location loc = op.getLoc();
-//                                       //auto type = op.getType();
-//                                       std::vector<double> data;
-//                                       data.push_back(1);
-//                                       data.push_back(1);
-//                                       data.push_back(1);
-//                                       data.push_back(2);
-//                                       data.push_back(2);
-//                                       data.push_back(2);
-//                                       Operation * oop = op;
-//                                       auto tensorType = (*oop->result_type_begin()).cast<TensorType>();
-//                                       auto shape = tensorType.getShape();
-//                                        mlir::Type elementType = rewriter.getF64Type();
-//                                       auto dataType = mlir::RankedTensorType::get(shape, elementType);
-//                                       auto dataAttribute =
-//         mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
-// auto constantRelay = rewriter.create<relay::ConstantOp>(loc, dataAttribute.getType(),dataAttribute);
-//  rewriter.replaceOp(op,{constantRelay});
-//     return matchSuccess();
         }
     };
 //===----------------------------------------------------------------------===//
@@ -151,9 +131,26 @@ namespace {
                         ConversionPatternRewriter &rewriter) const final {
             auto loc = op->getLoc();
             auto type = op->getResult(0).getType();
+            printf("t\n");
             auto transposeRelay = rewriter.create<relay::TransposeOp>(loc, type, operands[0]);
             //rewriter.replaceOp(op, {transposeRelay.getOperand()}, {transposeRelay});
             rewriter.replaceOp(op, {transposeRelay});
+            return matchSuccess();
+        }
+    };
+
+    struct Conv1dOpLowering : public ConversionPattern {
+        Conv1dOpLowering(MLIRContext *ctx)
+                : ConversionPattern(toy::Conv1dOp::getOperationName(), 1, ctx) {}
+
+        PatternMatchResult
+        matchAndRewrite(Operation *op, ArrayRef <Value> operands,
+                        ConversionPatternRewriter &rewriter) const final {
+            auto loc = op->getLoc();
+            auto type = op->getResult(0).getType();
+            printf("233\n");
+            auto conv1dRelay = rewriter.create<relay::Conv1dOp>(loc, type, operands[0],operands[1]);
+            rewriter.replaceOp(op, {conv1dRelay});
             return matchSuccess();
         }
     };
@@ -169,7 +166,6 @@ namespace {
             //auto printopRelay = rewriter.create<relay::PrintOp>(loc,operands[0]);
             rewriter.eraseOp(op);
             //rewriter.replaceOp(op, {printopRelay.getOperand()}, {printopRelay});
-
             return matchSuccess();
         }
     };
@@ -216,16 +212,15 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // if any of these operations are *not* converted. Given that we actually want
     // a partial lowering, we explicitly mark the Toy operations that don't want
     // to lower, `toy.print`, as `legal`.
-    target.addIllegalDialect<toy::ToyDialect>();
+    //target.addIllegalDialect<toy::ToyDialect>();
     //target.addLegalOp<ModuleOp, ModuleTerminatorOp>();
     target.addLegalOp<FuncOp>();
-
 
     // Now that the conversion target has been defined, we just need to provide
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
-    patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, Conv1dOpLowering,
-            ReturnOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
+    patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, 
+            ReturnOpLowering, TransposeOpLowering, Conv1dOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the
     // conversion. The conversion will signal failure if any of our `illegal`

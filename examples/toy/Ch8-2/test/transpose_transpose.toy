@@ -1,4 +1,0 @@
-def transpose_transpose(x) {
-  return transpose(transpose(x));
-}
-

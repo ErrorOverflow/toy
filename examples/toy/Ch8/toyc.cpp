@@ -148,7 +148,7 @@ int loadAndProcessMLIR(mlir::MLIRContext &context,
     bool isLoweringToRelay = emitAction >= Action::DumpMLIRRelay;
     bool isLoweringToIR = emitAction >= Action::DumpRelayIR;
 
-    if (EnableOpt || isLoweringToRelay) {
+    if (EnableOpt) {
         // Inline all functions into main and then delete them.
         pm.addPass(mlir::createInlinerPass());
         pm.addPass(mlir::toy::createDeadFunctionEliminationPass());
@@ -284,7 +284,6 @@ int main(int argc, char **argv) {
         return dumpLLVMIR(*module);
 
     if (emitAction == Action::DumpRelayIR) {
-        printf("\n");
         return dumpRelayIR(*module);
     }
 

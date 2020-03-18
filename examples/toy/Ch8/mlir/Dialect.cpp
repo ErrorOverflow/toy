@@ -142,6 +142,9 @@ static mlir::LogicalResult verify(ConstantOp op) {
     return mlir::success();
 }
 
+//===----------------------------------------------------------------------===//
+// AddOp
+
 static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
@@ -151,6 +154,9 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
 /// Infer the output shape of the AddOp, this is required by the shape inference
 /// interface.
 void AddOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// Conv1dOp
 
 static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {
@@ -179,6 +185,9 @@ CallInterfaceCallable GenericCallOp::getCallableForCallee() {
 /// call interface.
 Operation::operand_range GenericCallOp::getArgOperands() { return inputs(); }
 
+//===----------------------------------------------------------------------===//
+// MulOp
+
 static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
@@ -188,6 +197,9 @@ static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
 /// Infer the output shape of the MulOp, this is required by the shape inference
 /// interface.
 void MulOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// ReturnOp
 
 static mlir::LogicalResult verify(ReturnOp op) {
     // We know that the parent operation is a function, because of the 'HasParent'
@@ -223,6 +235,9 @@ static mlir::LogicalResult verify(ReturnOp op) {
                           << ") doesn't match function result type ("
                           << results.front() << ")";
 }
+
+//===----------------------------------------------------------------------===//
+// TransposeOp
 
 static void buildTransposeOp(mlir::Builder *builder,
                              mlir::OperationState &state, mlir::Value value) {

@@ -274,7 +274,7 @@ def TransposeOp : Toy_Op<"transpose",
 
 def Conv1dOp : Toy_Op<"conv1d",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
-  let summary = "element-wise addition operation";
+  let summary = "conv1d operation";
   let description = [{
     The "conv1d" operation performs element-wise addition between two tensors.
   }];
@@ -282,7 +282,6 @@ def Conv1dOp : Toy_Op<"conv1d",
   let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
   let results = (outs F64Tensor);
 
-  // Allow building an AddOp with from the two input operands.
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
       buildConv1dOp(b, result, lhs, rhs);
