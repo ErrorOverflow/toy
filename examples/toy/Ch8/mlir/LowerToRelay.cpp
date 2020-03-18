@@ -131,7 +131,6 @@ namespace {
                         ConversionPatternRewriter &rewriter) const final {
             auto loc = op->getLoc();
             auto type = op->getResult(0).getType();
-            printf("t\n");
             auto transposeRelay = rewriter.create<relay::TransposeOp>(loc, type, operands[0]);
             //rewriter.replaceOp(op, {transposeRelay.getOperand()}, {transposeRelay});
             rewriter.replaceOp(op, {transposeRelay});
@@ -148,7 +147,6 @@ namespace {
                         ConversionPatternRewriter &rewriter) const final {
             auto loc = op->getLoc();
             auto type = op->getResult(0).getType();
-            printf("233\n");
             auto conv1dRelay = rewriter.create<relay::Conv1dOp>(loc, type, operands[0],operands[1]);
             rewriter.replaceOp(op, {conv1dRelay});
             return matchSuccess();

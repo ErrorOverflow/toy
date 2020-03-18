@@ -225,7 +225,7 @@ int dumpLLVMIR(mlir::ModuleOp module) {
 }
 
 int dumpRelayIR(mlir::ModuleOp module) {
-    return mlir::translateModuleToRelayIR(module);
+    return 0;
 }
 
 int runJit(mlir::ModuleOp module) {
