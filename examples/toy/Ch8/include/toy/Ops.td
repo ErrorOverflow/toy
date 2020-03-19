@@ -289,5 +289,50 @@ def Conv1dOp : Toy_Op<"conv1d",
   >];
 }
 
+def SoftmaxOp : Toy_Op<"softmax", 
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let arguments = (ins F64Tensor:$input);
+  let results = (outs F64Tensor);
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value input", [{
+      buildSoftmaxOp(b, result, input);
+    }]
+  >];
+}
+
+def DenseOp : Toy_Op<"dense",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "dense operation";
+  let description = [{
+    The "dense" operation performs element-wise addition between two tensors.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildDenseOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
+def BiasAddOp : Toy_Op<"bias_add",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "bias_add operation";
+  let description = [{
+    The "bias_add" operation performs element-wise addition between two tensors.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildBiasAddOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
 
 #endif // TOY_OPS

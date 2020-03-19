@@ -80,6 +80,8 @@ namespace {
 
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
     using MulOpLowering = BinaryOpLowering<toy::MulOp, relay::MulOp>;
+    using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
+    using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
 
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Constant operations
@@ -134,6 +136,21 @@ namespace {
             auto transposeRelay = rewriter.create<relay::TransposeOp>(loc, type, operands[0]);
             //rewriter.replaceOp(op, {transposeRelay.getOperand()}, {transposeRelay});
             rewriter.replaceOp(op, {transposeRelay});
+            return matchSuccess();
+        }
+    };
+
+    struct SoftmaxOpLowering : public ConversionPattern {
+        SoftmaxOpLowering(MLIRContext *ctx)
+                : ConversionPattern(toy::SoftmaxOp::getOperationName(), 1, ctx) {}
+
+        PatternMatchResult
+        matchAndRewrite(Operation *op, ArrayRef <Value> operands,
+                        ConversionPatternRewriter &rewriter) const final {
+            auto loc = op->getLoc();
+            auto type = op->getResult(0).getType();
+            auto softmaxRelay = rewriter.create<relay::SoftmaxOp>(loc, type, operands[0]);
+            rewriter.replaceOp(op, {softmaxRelay});
             return matchSuccess();
         }
     };
@@ -218,6 +235,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, 
+            SoftmaxOpLowering, BiasAddLowering, DenseLowering,
             ReturnOpLowering, TransposeOpLowering, Conv1dOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the

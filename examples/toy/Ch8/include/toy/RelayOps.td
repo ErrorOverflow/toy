@@ -231,5 +231,51 @@ def TransposeOp : Relay_Op<"transpose"> {
   let verifier = [{ return ::verify(*this); }];
 }
 
+def SoftmaxOp : Relay_Op<"softmax"> {
+  let summary = "softmax operation";
 
+  let arguments = (ins F64Tensor:$input);
+  let results = (outs F64Tensor);
+
+  // Allow building a TransposeOp with from the two input operands.
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value input", [{
+      buildSoftmaxOp(b, result, input);
+    }]
+  >];
+}
+
+def DenseOp : Relay_Op<"dense"> {
+  let summary = "dense operation";
+  let description = [{
+    The "dense" operation performs element-wise addition between two tensors.
+    The shapes of the tensor operands are expected to match.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  // Allow building an AddOp with from the two input operands.
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildDenseOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
+def BiasAddOp : Relay_Op<"bias_add"> {
+  let summary = "bias_add operation";
+  let description = [{
+    The "bias_add" operation performs element-wise addition between two tensors.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildBiasAddOp(b, result, lhs, rhs);
+    }]
+  >];
+}
 #endif // Relay_OpS

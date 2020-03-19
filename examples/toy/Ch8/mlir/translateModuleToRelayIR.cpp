@@ -53,8 +53,7 @@ namespace {
         int Unary2Relay(mlir::Operation &op, std::string op_name){
             if(op.getName().getStringRef() != op_name)
                 return 0;
-            std::cout << "\ttmp" << tmp_num << " = " << op_name << "(";
-            //printf("    tmp%d = relay.transpose(", tmp_num);
+            std::cout << "    tmp" << tmp_num << " = " << op_name << "(";
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) {
@@ -72,15 +71,13 @@ namespace {
         int Binary2Relay(mlir::Operation &op, std::string op_name){
             if(op.getName().getStringRef() != op_name)
                 return 0;
-            std::cout << "\ttmp" << tmp_num << " = " << op_name << "(";
-            //printf("    tmp%d = %s(", tmp_num);
+            std::cout << "    tmp" << tmp_num << " = " << op_name << "(";
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) {
-                if (each_result[i] == op.getOperand(0)) break;
+                if (each_result[i] == op.getOperand(1)) break;
             }
-            if (i == len) printf("error occured!\n");
-            else printf("%s)\n", each_name[i].c_str());
+            std::cout<<each_name[i-1].c_str()<<", "<<each_name[i].c_str()<<")\n";
             each_result.push_back(op.getResult(0));
             std::string tmp = "tmp" + std::to_string(tmp_num);
             each_name.push_back(tmp);
@@ -101,12 +98,12 @@ namespace {
             std::vector<int> shape_vector;
             printf("    var%d = relay.var(\"var%d\",shape=(", num, num);
             for (size_t i = 0; i < shape.size(); i++) {
-                if (i != shape.size() - 1) printf("%ld,", shape[i]);
-                else printf("%ld),dtype=\"float64\")\n", shape[i]);
+                if (i != shape.size() - 1) std::cout<< shape[i] << ",";
+                else std::cout << shape[i] << "),dtype=\"float64\")\n";
                 dataNum *= shape[i];
                 shape_vector.push_back(shape[i]);
             }
-            printf("    data%d=", num);
+            printf("    data%d = ", num);
             std::vector<double> data;
             for (int i = 0; i < dataNum; i++) {
                 data.push_back(*valueIt++);
@@ -127,48 +124,52 @@ namespace {
         int Print2Relay(mlir::Operation &op){
             if (op.getName().getStringRef() != "relay.print")
                 return 0;
-            printf("    f1 = relay.Function([");
+            std::cout << "    f1 = relay.Function([";
             for (int i = 0; i < num; i++) {
-                printf("var%d", i);
-                if (i != num - 1) printf(",");
-                else printf("],");
+                std::cout << "var" << i;
+                if (i != num - 1) std::cout << ",";
+                else std::cout<<"],";
             }
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) {
                 if (each_result[i] == op.getOperand(0)) break;
             }
-            if (i == len) printf("error occured!\n");
-            else printf("%s)\n", each_name[i].c_str());
-            printf("\tmod = relay.Module.from_expr(f1)\n");
-            printf("\tmod = relay.transform.InferType()(mod)\n");
-            printf("\topt_level = 3\n");
-            printf("\ttarget = tvm.target.cuda()\n");
-            printf("\twith relay.build_config(opt_level=opt_level):\n");
-            printf("\t\tgraph, lib, params = relay.build_module.build(mod, target)\n");
-            printf("\tctx = tvm.gpu()\n");
-            printf("\tmodule = graph_runtime.create(graph, lib, ctx)\n");
+            if (i == len) std::cout << "error occured!\n";
+            else std::cout << each_name[i].c_str() << ")\n";
+            std::cout << "    mod = relay.Module.from_expr(f1)\n"
+                << "    mod = relay.transform.InferType()(mod)\n"
+                << "    opt_level = 3\n"
+                << "    target = tvm.target.cuda()\n"
+                << "    with relay.build_config(opt_level=opt_level):\n"
+                << "        graph, lib, params = relay.build_module.build(mod, target)\n"
+                << "    ctx = tvm.gpu()\n"
+                << "    module = graph_runtime.create(graph, lib, ctx)\n";
             for (int i = 0; i < num; i++) {
-                printf("\tmodule.set_input(\"var%d\",data%d)\n", i, i);
+                std::cout << "    module.set_input(\"var"<< i << "\",data"<< i <<")\n";
             }
-            printf("\tmodule.run()\n");
-            printf("\tout = module.get_output(0).asnumpy()\n");
-            printf("\tprint(out)\n");            
+            std::cout << ("    module.run()\n")
+                << "    out = module.get_output(0).asnumpy()\n"
+                << "    print(out)\n";            
             return 0;
         }
 
         void runOnFunction() override {
-            printf("from tvm import relay\nimport tvm\nimport numpy as np\nfrom tvm.contrib import graph_runtime\n");
-            printf("if __name__ == \"__main__\":\n");
+            std::cout << ("from tvm import relay\nimport tvm\nimport numpy as np\nfrom tvm.contrib import graph_runtime\n");
+            //std::cout << "def net():\n";
+            std::cout << "if __name__ == \"__main__\":\n";
             for (mlir::Block &block : getFunction()) {
                 for (mlir::Operation &op : llvm::make_early_inc_range(block)) {
                     Constant2Relay(op);
                     Unary2Relay(op, "relay.transpose");
                     Unary2Relay(op, "toy.reshape");
+                    Unary2Relay(op, "relay.softmax");
                     Print2Relay(op);
                     Binary2Relay(op, "relay.add");
                     Binary2Relay(op, "relay.mul");
                     Binary2Relay(op, "relay.conv1d");
+                    Binary2Relay(op, "relay.dense");
+                    Binary2Relay(op, "relay.bias_add");
                 }
             }
         }

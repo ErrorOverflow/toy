@@ -333,13 +333,40 @@ namespace {
                 return builder.create<TransposeOp>(location, operands[0]);
             }
 
+            if (callee == "softmax") {
+                if (call.getArgs().size() != 1) {
+                    emitError(location, "MLIR codegen encountered an error: toy.softmax "
+                                        "does not accept multiple arguments");
+                    return nullptr;
+                }
+                return builder.create<SoftmaxOp>(location, operands[0]);
+            }
+            
             if (callee == "conv1d") {
                 if (call.getArgs().size() != 2) {
                     emitError(location, "MLIR codegen encountered an error: toy.conv1d "
                                         "just accept 2 arguments");
                     return nullptr;
                 }
-                return builder.create<Conv1dOp>(location, operands[0],operands[1]);
+                return builder.create<Conv1dOp>(location, operands[0], operands[1]);
+            }
+
+            if (callee == "dense") {
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.dense "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<DenseOp>(location, operands[0], operands[1]);
+            }
+
+            if (callee == "bias_add") {
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.conv1d "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<BiasAddOp>(location, operands[0], operands[1]);
             }
 
             // Otherwise this is a call to a user-defined function. Calls to ser-defined

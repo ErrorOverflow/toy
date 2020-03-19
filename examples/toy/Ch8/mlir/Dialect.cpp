@@ -155,17 +155,6 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
 /// interface.
 void AddOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
-//===----------------------------------------------------------------------===//
-// Conv1dOp
-
-static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value lhs, mlir::Value rhs) {
-    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({lhs, rhs});
-}
-
-void Conv1dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
-
 static void buildGenericCallOp(mlir::Builder *builder,
                                mlir::OperationState &state, StringRef callee,
                                ArrayRef <mlir::Value> arguments) {
@@ -265,6 +254,50 @@ static mlir::LogicalResult verify(TransposeOp op) {
     }
     return mlir::success();
 }
+
+//===----------------------------------------------------------------------===//
+// Conv1dOp
+
+static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+void Conv1dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// SoftmaxOp
+
+static void buildSoftmaxOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value input) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({input});
+}
+// wrong?
+void SoftmaxOp::inferShapes() { getResult().setType(getOperand().getType()); }
+
+//===----------------------------------------------------------------------===//
+// DenseOp
+
+static void buildDenseOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+void DenseOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// BiasAddOp
+
+static void buildBiasAddOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+void BiasAddOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
 // TableGen'd op method definitions

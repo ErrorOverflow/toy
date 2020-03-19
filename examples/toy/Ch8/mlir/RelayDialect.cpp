@@ -128,6 +128,24 @@ static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addOperands({lhs, rhs});
 }
 
+static void buildDenseOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+static void buildBiasAddOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+static void buildSoftmaxOp(mlir::Builder *builder,
+                             mlir::OperationState &state, mlir::Value value) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands(value);
+}
+
 static mlir::LogicalResult verify(ReturnOp op) {
     // We know that the parent operation is a function, because of the 'HasParent'
     // trait attached to the operation definition.
