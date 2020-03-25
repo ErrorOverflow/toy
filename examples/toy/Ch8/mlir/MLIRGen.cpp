@@ -129,6 +129,10 @@ namespace {
             return mlir::FuncOp::create(location, proto.getName(), func_type);
         }
 
+        //mlir::IfOp mlirGen(IfExprAST &ifAST){
+
+        //}
+
         /// Emit a new function and add it to the MLIR module.
         mlir::FuncOp mlirGen(FunctionAST &funcAST) {
             // Create a scope in the symbol table to hold variable declarations.

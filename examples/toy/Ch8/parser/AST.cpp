@@ -60,6 +60,8 @@ namespace {
 
         void dump(PrintExprAST *node);
 
+        void dump(IfExprAST *node);
+
         void dump(PrototypeAST *node);
 
         void dump(FunctionAST *node);
@@ -93,7 +95,7 @@ static std::string loc(T *node) {
 /// Dispatch to a generic expressions to the appropriate subclass using RTTI
 void ASTDumper::dump(ExprAST *expr) {
     mlir::TypeSwitch<ExprAST *>(expr)
-            .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST,
+            .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST, IfExprAST,
                     PrintExprAST, ReturnExprAST, VarDeclExprAST, VariableExprAST>(
                     [&](auto *node) { this->dump(node); })
             .Default([&](ExprAST *) {
@@ -205,6 +207,13 @@ void ASTDumper::dump(PrintExprAST *node) {
     dump(node->getArg());
     indent();
     llvm::errs() << "]\n";
+}
+
+/// Print if block;
+void ASTDumper::dump(IfExprAST *node) {
+    INDENT();
+    llvm::errs() << "loop.if \n";
+    dump(node->getBody());
 }
 
 /// Print type: only the shape is printed in between '<' and '>'

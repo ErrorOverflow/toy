@@ -55,6 +55,7 @@
         "thread": "cpp",
         "typeinfo": "cpp",
         "list": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "strstream": "cpp"
     }
 }

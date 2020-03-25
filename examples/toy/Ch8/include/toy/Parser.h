@@ -25,6 +25,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 namespace toy {
 
@@ -41,7 +42,6 @@ namespace toy {
         /// Parse a full Module. A module is a list of function definitions.
         std::unique_ptr <ModuleAST> parseModule() {
             lexer.getNextToken(); // prime the lexer
-
             // Parse functions one at a time and accumulate in this vector.
             std::vector <FunctionAST> functions;
             while (auto f = parseDefinition()) {
@@ -57,7 +57,30 @@ namespace toy {
         }
 
     private:
-        Lexer &lexer;
+        Lexer &lexer;     
+
+        /// Parse a if block.
+        /// if := ([primary { < | > } primary]) block ;
+        std::unique_ptr <IfExprAST> parseIf() {
+            auto loc = lexer.getLastLocation();
+            lexer.consume(tok_if);
+            lexer.consume(Token('('));
+            auto lhs = parsePrimary();
+            char op = lexer.getCurToken();
+            lexer.consume(Token(op));
+            auto rhs = parsePrimary();
+            lexer.consume(Token(')'));
+            
+            auto expr_list = parseBlock();
+            return std::make_unique<IfExprAST>(std::move(loc), op, std::move(lhs), 
+                std::move(rhs), std::move(expr_list));            
+        }
+
+        /// Parse a for block.
+        /// for := (VarDefine ; boolExpr ; loopExpr) block ;
+        //std::unique_ptr <ForExprAST> parseFor() {
+
+        //}
 
         /// Parse a return statement.
         /// return :== return ; | return expr ;
@@ -352,6 +375,8 @@ namespace toy {
 
             auto exprList = std::make_unique<ExprASTList>();
 
+            bool isBlock = false;
+
             // Ignore empty expressions: swallow sequences of semicolons.
             while (lexer.getCurToken() == ';')
                 lexer.consume(Token(';'));
@@ -369,6 +394,18 @@ namespace toy {
                     if (!ret)
                         return nullptr;
                     exprList->push_back(std::move(ret));
+                } else if (lexer.getCurToken() == tok_if) {
+                    auto ifOp = parseIf();
+                    if (!ifOp)
+                        return nullptr;
+                    exprList->push_back(std::move(ifOp));
+                    isBlock = true;
+                } else if (lexer.getCurToken() == tok_for) {
+                    auto forOp = parseIf();
+                    if (!forOp)
+                        return nullptr;
+                    exprList->push_back(std::move(forOp));
+                    isBlock = true;
                 } else {
                     // General expression
                     auto expr = parseExpression();
@@ -377,7 +414,7 @@ namespace toy {
                     exprList->push_back(std::move(expr));
                 }
                 // Ensure that elements are separated by a semicolon.
-                if (lexer.getCurToken() != ';')
+                if (lexer.getCurToken() != ';' && !isBlock)
                     return parseError<ExprASTList>(";", "after expression");
 
                 // Ignore empty expressions: swallow sequences of semicolons.

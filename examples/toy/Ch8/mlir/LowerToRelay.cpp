@@ -73,7 +73,6 @@ namespace {
             auto type = op->getResult(0).getType();
             auto binaryopRelay = rewriter.create<LoweredBinaryOp>(loc, type, operands[0], operands[1]);
             rewriter.replaceOp(op, {binaryopRelay});
-            //rewriter.eraseOp(op);
             return matchSuccess();
         }
     };
@@ -82,6 +81,7 @@ namespace {
     using MulOpLowering = BinaryOpLowering<toy::MulOp, relay::MulOp>;
     using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
     using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
+    using Conv1dOpLowering = BinaryOpLowering<toy::Conv1dOp, relay::Conv1dOp>;
 
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Constant operations
@@ -151,21 +151,6 @@ namespace {
             auto type = op->getResult(0).getType();
             auto softmaxRelay = rewriter.create<relay::SoftmaxOp>(loc, type, operands[0]);
             rewriter.replaceOp(op, {softmaxRelay});
-            return matchSuccess();
-        }
-    };
-
-    struct Conv1dOpLowering : public ConversionPattern {
-        Conv1dOpLowering(MLIRContext *ctx)
-                : ConversionPattern(toy::Conv1dOp::getOperationName(), 1, ctx) {}
-
-        PatternMatchResult
-        matchAndRewrite(Operation *op, ArrayRef <Value> operands,
-                        ConversionPatternRewriter &rewriter) const final {
-            auto loc = op->getLoc();
-            auto type = op->getResult(0).getType();
-            auto conv1dRelay = rewriter.create<relay::Conv1dOp>(loc, type, operands[0],operands[1]);
-            rewriter.replaceOp(op, {conv1dRelay});
             return matchSuccess();
         }
     };

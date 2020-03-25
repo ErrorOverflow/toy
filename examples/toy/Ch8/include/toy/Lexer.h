@@ -43,6 +43,8 @@ namespace toy {
         tok_return = -2,
         tok_var = -3,
         tok_def = -4,
+        tok_if = -5,
+        tok_for = -6,
 
         // primary
         tok_identifier = -5,
@@ -146,6 +148,10 @@ namespace toy {
                     return tok_def;
                 if (identifierStr == "var")
                     return tok_var;
+                if (identifierStr == "if")
+                    return tok_if;
+                if (identifierStr == "for")
+                    return tok_for;                
                 return tok_identifier;
             }
 

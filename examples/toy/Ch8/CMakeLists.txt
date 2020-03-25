@@ -24,6 +24,7 @@ add_toy_chapter(toyc-ch8
   )
 
 add_dependencies(toyc-ch8 ToyCh8ShapeInferenceInterfaceIncGen)
+add_dependencies(toyc-ch8 ToyCh8LoopOpsInterfaceIncGen)
 add_dependencies(toyc-ch8 ToyCh8OpsIncGen)
 add_dependencies(toyc-ch8 ToyCh8RelayOpsIncGen)
 add_dependencies(toyc-ch8 ToyCh8CombineIncGen)

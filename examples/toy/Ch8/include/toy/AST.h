@@ -41,6 +41,7 @@ namespace toy {
             Expr_BinOp,
             Expr_Call,
             Expr_Print,
+            Expr_IfOp,
         };
 
         ExprAST(ExprASTKind kind, Location location)
@@ -144,6 +145,32 @@ namespace toy {
 
         /// LLVM style RTTI
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_Return; }
+    };
+
+/// Expression class for a if operator.
+    class IfExprAST : public ExprAST {
+        Location location;
+        char op;
+        std::unique_ptr <ExprAST> lhs, rhs;
+        std::unique_ptr <ExprASTList> body;
+
+    public:
+        char getOp() { return op; }
+
+        ExprAST *getLHS() { return lhs.get(); }
+
+        ExprAST *getRHS() { return rhs.get(); }
+
+        ExprASTList *getBody() { return body.get(); }
+
+        IfExprAST(Location loc, char Op, std::unique_ptr <ExprAST> lhs,
+                      std::unique_ptr <ExprAST> rhs, std::unique_ptr <ExprASTList> body)
+                : ExprAST(Expr_IfOp, loc), op(Op), lhs(std::move(lhs)),
+                  rhs(std::move(rhs)), body(std::move(body)) {}
+
+        const Location &loc() { return location; }
+
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_IfOp; }
     };
 
 /// Expression class for a binary operator.
