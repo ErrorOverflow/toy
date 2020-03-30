@@ -23,6 +23,7 @@
 #else
 #define TOY_OPS
 
+include "mlir/IR/OpBase.td"
 include "mlir/Analysis/CallInterfaces.td"
 include "toy/ShapeInferenceInterface.td"
 include "mlir/Transforms/LoopLikeInterface.td"
@@ -328,5 +329,11 @@ def BiasAddOp : Toy_Op<"bias_add",
   >];
 }
 
+def IfOp : Toy_Op<"if", [NoSideEffect]>{
+    let summary = "if branch";
+    let description = [{
+        The "if" branch is envolved with two tensor and one operation.
+    }];    
+}
 
 #endif // TOY_OPS

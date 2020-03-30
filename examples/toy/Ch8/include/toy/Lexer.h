@@ -43,8 +43,8 @@ namespace toy {
         tok_return = -2,
         tok_var = -3,
         tok_def = -4,
-        tok_if = -5,
-        tok_for = -6,
+        tok_if = -7,
+        tok_for = -8,
 
         // primary
         tok_identifier = -5,

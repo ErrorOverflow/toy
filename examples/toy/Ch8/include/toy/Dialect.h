@@ -49,7 +49,6 @@ namespace mlir {
 #define GET_OP_CLASSES
 
 #include "toy/Ops.h.inc"
-
     } // end namespace toy
 } // end namespace mlir
 

@@ -36,6 +36,7 @@
 #include "llvm/ADT/ScopedHashTable.h"
 #include "llvm/Support/raw_ostream.h"
 #include <numeric>
+#include <iostream>
 
 using namespace mlir::toy;
 using namespace toy;
@@ -129,9 +130,18 @@ namespace {
             return mlir::FuncOp::create(location, proto.getName(), func_type);
         }
 
-        //mlir::IfOp mlirGen(IfExprAST &ifAST){
-
-        //}
+        mlir::Value mlirGen(IfExprAST &ifAST){
+            //return builder.create<IfOp>(loc(ifAST.loc()), mlirGen(*ifAST.getLHS()), mlirGen(*ifAST.getOp()), mlirGen(*ifAST.getRHS()));
+            auto location = loc(ifAST.loc());
+            builder.create<IfOp>(location);
+            if(ifAST.getOp() == "<"){
+                std::cout << "here is <" << std::endl;
+            }
+            if (mlir::failed(mlirGen(*ifAST.getBody()))) {
+                return nullptr;
+            }
+            return nullptr;
+        }
 
         /// Emit a new function and add it to the MLIR module.
         mlir::FuncOp mlirGen(FunctionAST &funcAST) {
