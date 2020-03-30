@@ -129,12 +129,14 @@ namespace {
             auto func_type = builder.getFunctionType(arg_types, llvm::None);
             return mlir::FuncOp::create(location, proto.getName(), func_type);
         }
-
+        
         mlir::LogicalResult mlirGen(IfExprAST &ifAST){
             auto location = loc(ifAST.loc());
-            if(!mlirGen(*ifAST.getValue()))
+            mlir::Value v = mlirGen(*ifAST.getValue());
+            mlir::Value block_range = builder.create<ConstantOp>(location, ifAST.getBodyNum());
+            if(!v)
                 return mlir::failure();
-            builder.create<IfOp>(location);
+            builder.create<IfOp>(location, v, block_range);
             if (mlir::failed(mlirGen(*ifAST.getBody())))
                 return mlir::failure();
             return mlir::success();
@@ -221,6 +223,10 @@ namespace {
                     return builder.create<AddOp>(location, lhs, rhs);
                 case '*':
                     return builder.create<MulOp>(location, lhs, rhs);
+                case '>':
+                    return builder.create<BgtzOp>(location, lhs, rhs);
+                case '<':
+                    return builder.create<BltzOp>(location, lhs, rhs);
             }
 
             emitError(location, "invalid binary operator '") << binop.getOp() << "'";
