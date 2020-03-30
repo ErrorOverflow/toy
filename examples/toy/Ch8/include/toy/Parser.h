@@ -63,20 +63,13 @@ namespace toy {
         /// if := ([primary { < | > } primary]) block ;
         std::unique_ptr <IfExprAST> parseIf() {
             auto loc = lexer.getLastLocation();
-            std::string op_str;
             lexer.consume(tok_if);
             lexer.consume(Token('('));
-            auto lhs = parsePrimary();
-            //get the op like '<'
-            char op = lexer.getCurToken();
-            op_str.push_back(op);
-            lexer.consume(Token(op));
-            auto rhs = parsePrimary();
+            auto value = parseExpression();
             lexer.consume(Token(')'));
             
             auto expr_list = parseBlock();
-            return std::make_unique<IfExprAST>(std::move(loc), op_str, std::move(lhs), 
-                std::move(rhs), std::move(expr_list));
+            return std::make_unique<IfExprAST>(std::move(loc), std::move(value), std::move(expr_list));
         }
 
         /// Parse a for block.
@@ -499,6 +492,10 @@ namespace toy {
                     return 20;
                 case '*':
                     return 40;
+                case '<':
+                    return 10;
+                case '>':
+                    return 10;
                 default:
                     return -1;
             }

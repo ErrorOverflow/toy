@@ -147,34 +147,6 @@ namespace toy {
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_Return; }
     };
 
-/// Expression class for a if operator.
-    class IfExprAST : public ExprAST {
-        Location location;
-        std::string op;
-        std::unique_ptr <ExprAST> lhs, rhs;
-        std::unique_ptr <ExprASTList> body;
-
-    public:
-        llvm::StringRef getOp() { return op; }
-
-        ExprAST *getLHS() { return lhs.get(); }
-
-        ExprAST *getRHS() { return rhs.get(); }
-
-        uint32_t getBodyNum() { return body.get()->size(); }
-
-        ExprASTList *getBody() { return body.get(); }
-
-        IfExprAST(Location loc, std::string Op, std::unique_ptr <ExprAST> lhs,
-                      std::unique_ptr <ExprAST> rhs, std::unique_ptr <ExprASTList> body)
-                : ExprAST(Expr_IfOp, loc), op(Op), lhs(std::move(lhs)),
-                  rhs(std::move(rhs)), body(std::move(body)) {}
-
-        const Location &loc() { return location; }
-
-        static bool classof(const ExprAST *c) { return c->getKind() == Expr_IfOp; }
-    };
-
 /// Expression class for a binary operator.
     class BinaryExprAST : public ExprAST {
         char op;
@@ -226,6 +198,39 @@ namespace toy {
 
         /// LLVM style RTTI
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_Print; }
+    };
+
+/// Expression class for a if operator.
+    class IfExprAST : public ExprAST {
+        Location location;
+        //std::string op;
+        //std::unique_ptr <ExprAST> lhs, rhs;
+        std::unique_ptr <ExprAST> value;
+        std::unique_ptr <ExprASTList> body;
+
+    public:
+        //llvm::StringRef getOp() { return op; }
+
+        //ExprAST *getLHS() { return lhs.get(); }
+
+        //ExprAST *getRHS() { return rhs.get(); }
+
+        uint32_t getBodyNum() { return body.get()->size(); }
+
+        ExprASTList *getBody() { return body.get(); }
+
+        ExprAST *getValue() { return value.get(); }
+
+        // IfExprAST(Location loc, std::string Op, std::unique_ptr <ExprAST> lhs,
+        //               std::unique_ptr <ExprAST> rhs, std::unique_ptr <ExprASTList> body)
+        //         : ExprAST(Expr_IfOp, loc), op(Op), lhs(std::move(lhs)),
+        //           rhs(std::move(rhs)), body(std::move(body)) {}
+
+        IfExprAST(Location loc, std::unique_ptr <ExprAST> value, 
+            std::unique_ptr <ExprASTList> body) : ExprAST(Expr_IfOp, loc), value(std::move(value)),
+            body(std::move(body)) {}
+
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_IfOp; }
     };
 
 /// This class represents the "prototype" for a function, which captures its

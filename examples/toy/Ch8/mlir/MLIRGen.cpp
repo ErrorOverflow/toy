@@ -130,17 +130,14 @@ namespace {
             return mlir::FuncOp::create(location, proto.getName(), func_type);
         }
 
-        mlir::Value mlirGen(IfExprAST &ifAST){
-            //return builder.create<IfOp>(loc(ifAST.loc()), mlirGen(*ifAST.getLHS()), mlirGen(*ifAST.getOp()), mlirGen(*ifAST.getRHS()));
+        mlir::LogicalResult mlirGen(IfExprAST &ifAST){
             auto location = loc(ifAST.loc());
+            if(!mlirGen(*ifAST.getValue()))
+                return mlir::failure();
             builder.create<IfOp>(location);
-            if(ifAST.getOp() == "<"){
-                std::cout << "here is <" << std::endl;
-            }
-            if (mlir::failed(mlirGen(*ifAST.getBody()))) {
-                return nullptr;
-            }
-            return nullptr;
+            if (mlir::failed(mlirGen(*ifAST.getBody())))
+                return mlir::failure();
+            return mlir::success();
         }
 
         /// Emit a new function and add it to the MLIR module.
@@ -463,6 +460,12 @@ namespace {
                 // Specific handling for variable declarations, return statement, and
                 // print. These can only appear in block list and not in nested
                 // expressions.
+                if (auto *ifop =  dyn_cast<IfExprAST>(expr.get())){
+                    std::cout << "entry if" << std::endl;
+                    if(mlir::failed(mlirGen(*ifop)))
+                        return mlir::failure();
+                    continue;
+                }
                 if (auto *vardecl = dyn_cast<VarDeclExprAST>(expr.get())) {
                     if (!mlirGen(*vardecl))
                         return mlir::failure();

@@ -184,6 +184,25 @@ def MulOp : Toy_Op<"mul",
   >];
 }
 
+def GreaterOp : Toy_Op<"bgtz",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "element-wise multiplication operation";
+  let description = [{
+    The "bgtz" operation performs element-wise multiplication between two
+    tensors. The shapes of the tensor operands are expected to match.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs I1Tensor);
+
+  // Allow building a MulOp with from the two input operands.
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildGreaterOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
 def PrintOp : Toy_Op<"print"> {
   let summary = "print operation";
   let description = [{
@@ -333,7 +352,8 @@ def IfOp : Toy_Op<"if", [NoSideEffect]>{
     let summary = "if branch";
     let description = [{
         The "if" branch is envolved with two tensor and one operation.
-    }];    
+    }];
+    //let arguments = (ins I1Tensor:$value);
 }
 
 #endif // TOY_OPS

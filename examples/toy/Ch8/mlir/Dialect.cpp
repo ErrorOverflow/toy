@@ -188,6 +188,19 @@ static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
 void MulOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
+// GreaterOp
+
+static void buildGreaterOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+/// Infer the output shape of the GreaterOp, this is required by the shape inference
+/// interface.
+void GreaterOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
 // ReturnOp
 
 static mlir::LogicalResult verify(ReturnOp op) {
