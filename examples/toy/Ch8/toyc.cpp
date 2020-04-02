@@ -166,11 +166,11 @@ int loadAndProcessMLIR(mlir::MLIRContext &context,
         pm.addPass(mlir::toy::createLowerToRelayPass());
 
         mlir::OpPassManager &optPM = pm.nest<mlir::FuncOp>();
-        optPM.addPass(mlir::createCanonicalizerPass());
-        optPM.addPass(mlir::createCSEPass());
-
         // Add optimizations if enabled.
+
         if (EnableOpt) {
+            optPM.addPass(mlir::createCanonicalizerPass());
+            optPM.addPass(mlir::createCSEPass());
             optPM.addPass(mlir::createLoopFusionPass());
             optPM.addPass(mlir::createMemRefDataFlowOptPass());
         }

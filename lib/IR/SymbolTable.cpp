@@ -115,6 +115,12 @@ void SymbolTable::erase(Operation *symbol) {
   }
 }
 
+// void SymbolTable::replace(Operation *symbol, Block::iterator insertPt) {
+//     Optional<StringRef> name = getNameIfSymbol(symbol);
+//     auto it = symbolTable.find(*name);
+//     it->second
+// }
+
 /// Insert a new symbol into the table and associated operation, and rename it
 /// as necessary to avoid collisions.
 void SymbolTable::insert(Operation *symbol, Block::iterator insertPt) {

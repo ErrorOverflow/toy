@@ -47,6 +47,8 @@ namespace {
     private:
         unsigned int num = 0;
         unsigned int tmp_num = 0;
+        bool isIf = false;
+        bool isFor = false;
         std::vector<mlir::Value> each_result;
         std::vector<std::string> each_name;
         std::string func_para_define;
@@ -74,7 +76,7 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            std::cout<<each_name[i-1].c_str()<<", "<< each_name[i] <<")\n";
+            std::cout << each_name[i-1] << ", " << each_name[i] << ")\n";
             each_result.push_back(op.getResult(0));
             std::string tmp = "tmp" + std::to_string(tmp_num);
             each_name.push_back(tmp);
@@ -94,9 +96,39 @@ namespace {
             return 0;
         }
 
+        int Bltz2Relay(mlir::Operation &op){
+            if(op.getName().getStringRef() != "toy.bltz")
+                return 0;
+            size_t i;
+            size_t len = each_result.size();
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            std::cout << each_name[i-1] << "<"<< each_name[i];
+            if(isIf) std::cout << "):\n";
+            if(isFor) std::cout << ";";
+            return 0;
+        }
+
+        int If2Relay(mlir::Operation &op){
+            if(op.getName().getStringRef() != "toy.if")
+                return 0;
+            std::cout << "if(";
+            isIf = true;
+            return 0;
+        }
+
+        int For2Relay(mlir::Operation &op){
+            if(op.getName().getStringRef() != "toy.if")
+                return 0;
+            isFor = true;
+            return 0;
+        }
+
         int Constant2Relay(mlir::Operation &op){
             if (op.getName().getStringRef() != "relay.constant") 
                 return 0;
+            if (isIf || isFor){
+                return 0;
+            }
             auto constantop = mlir::dyn_cast<mlir::relay::ConstantOp>(&op);
             auto constantValue = constantop.value();
             auto valueIt = constantValue.getValues<double>().begin();
@@ -206,8 +238,9 @@ namespace {
                 for (mlir::Operation &op : llvm::make_early_inc_range(block)) {
                     Constant2Relay(op);
                     Unary2Relay(op, "relay.transpose", "relay.op.transpose");
-                    Unary2Relay(op, "toy.reshape", "relay.op.reshape");
+                    Unary2Relay(op, "relay.reshape", "relay.op.reshape");
                     Unary2Relay(op, "relay.softmax", "relay.nn.softmax");
+                    Unary2Relay(op, "relay.reshape", "np.reshape");
                     Print2Relay(op);
                     Return2Relay(op);
                     Binary2Relay(op, "relay.add", "relay.op.add");

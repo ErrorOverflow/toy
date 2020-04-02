@@ -42,6 +42,8 @@ namespace {
 
         void dump(VarDeclExprAST *varDecl);
 
+        void dump(ExeExprAST *exe);
+
         void dump(ExprAST *expr);
 
         void dump(ExprASTList *exprList);
@@ -61,6 +63,8 @@ namespace {
         void dump(PrintExprAST *node);
 
         void dump(IfExprAST *node);
+
+        void dump(ForExprAST *node);
 
         void dump(PrototypeAST *node);
 
@@ -95,8 +99,8 @@ static std::string loc(T *node) {
 /// Dispatch to a generic expressions to the appropriate subclass using RTTI
 void ASTDumper::dump(ExprAST *expr) {
     mlir::TypeSwitch<ExprAST *>(expr)
-            .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST, IfExprAST,
-                    PrintExprAST, ReturnExprAST, VarDeclExprAST, VariableExprAST>(
+            .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST, IfExprAST, ExeExprAST,
+                    ForExprAST,PrintExprAST, ReturnExprAST, VarDeclExprAST, VariableExprAST>(
                     [&](auto *node) { this->dump(node); })
             .Default([&](ExprAST *) {
                 // No match, fallback to a generic message
@@ -114,6 +118,15 @@ void ASTDumper::dump(VarDeclExprAST *varDecl) {
     llvm::errs() << " " << loc(varDecl) << "\n";
     dump(varDecl->getInitVal());
 }
+
+/// print execution
+void ASTDumper::dump(ExeExprAST *exe) {
+    INDENT();
+    llvm::errs() << "Execution " << exe->getLHS();
+    llvm::errs() << " " << loc(exe) << "\n";
+    dump(exe->getRHS());
+}
+
 
 /// A "block", or a list of expression
 void ASTDumper::dump(ExprASTList *exprList) {
@@ -213,6 +226,13 @@ void ASTDumper::dump(PrintExprAST *node) {
 void ASTDumper::dump(IfExprAST *node) {
     INDENT();
     llvm::errs() << "loop.if \n";
+    dump(node->getBody());
+}
+
+/// Print for block;
+void ASTDumper::dump(ForExprAST *node) {
+    INDENT();
+    llvm::errs() << "loop.for \n";
     dump(node->getBody());
 }
 

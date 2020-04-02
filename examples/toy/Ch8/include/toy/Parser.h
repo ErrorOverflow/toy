@@ -67,16 +67,28 @@ namespace toy {
             lexer.consume(Token('('));
             auto value = parseExpression();
             lexer.consume(Token(')'));
-            
             auto expr_list = parseBlock();
+
             return std::make_unique<IfExprAST>(std::move(loc), std::move(value), std::move(expr_list));
         }
 
         /// Parse a for block.
         /// for := (VarDefine ; boolExpr ; loopExpr) block ;
-        //std::unique_ptr <ForExprAST> parseFor() {
+        std::unique_ptr <ForExprAST> parseFor() {
+            auto loc = lexer.getLastLocation();
+            lexer.consume(tok_for);
+            lexer.consume(Token('('));
+            auto decl = parseDeclaration();
+            lexer.consume(Token(';'));
+            auto value = parseExpression();
+            lexer.consume(Token(';'));
+            auto expr = parseExecution();
+            lexer.consume(Token(')'));
+            auto expr_list = parseBlock();
 
-        //}
+            return std::make_unique<ForExprAST>
+                (std::move(loc), std::move(decl), std::move(value), std::move(expr),std::move(expr_list));
+        }
 
         /// Parse a return statement.
         /// return :== return ; | return expr ;
@@ -358,6 +370,20 @@ namespace toy {
                                                     std::move(*type), std::move(expr));
         }
 
+        /// execution ::= primary = expression
+        std::unique_ptr <ExeExprAST> parseExecution() {
+            auto loc = lexer.getLastLocation();
+            if (lexer.getCurToken() != tok_identifier)
+                return parseError<ExeExprAST>("identified",
+                                                  "in execution");
+            std::string lhs(lexer.getId());
+            lexer.consume(tok_identifier);
+            lexer.consume(Token('='));
+            auto rhs = parseExpression();
+            
+            return std::make_unique<ExeExprAST>(std::move(loc), std::move(lhs), std::move(rhs));
+        }
+
         /// Parse a block: a list of expression separated by semicolons and wrapped in
         /// curly braces.
         ///
@@ -397,14 +423,14 @@ namespace toy {
                     exprList->push_back(std::move(ifOp));
                     isBlock = true;
                 } else if (lexer.getCurToken() == tok_for) {
-                    auto forOp = parseIf();
+                    auto forOp = parseFor();
                     if (!forOp)
                         return nullptr;
                     exprList->push_back(std::move(forOp));
                     isBlock = true;
                 } else {
                     // General expression
-                    auto expr = parseExpression();
+                    auto expr = parseExecution();
                     if (!expr)
                         return nullptr;
                     exprList->push_back(std::move(expr));

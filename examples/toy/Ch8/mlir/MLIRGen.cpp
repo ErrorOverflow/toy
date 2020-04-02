@@ -132,15 +132,28 @@ namespace {
         
         mlir::LogicalResult mlirGen(IfExprAST &ifAST){
             auto location = loc(ifAST.loc());
+            builder.create<IfOp>(location);
             mlir::Value v = mlirGen(*ifAST.getValue());
             mlir::Value block_range = builder.create<ConstantOp>(location, ifAST.getBodyNum());
-            if(!v)
+            if(!v || !block_range)
                 return mlir::failure();
-            builder.create<IfOp>(location, v, block_range);
             if (mlir::failed(mlirGen(*ifAST.getBody())))
                 return mlir::failure();
             return mlir::success();
         }
+
+        mlir::LogicalResult mlirGen(ForExprAST &forAST){
+            auto location = loc(forAST.loc());
+            builder.create<ForOp>(location);
+            mlirGen(*forAST.getDecl());
+            mlirGen(*forAST.getValue());
+            mlirGen(*forAST.getExpr());
+            builder.create<ConstantOp>(location, forAST.getBodyNum());
+            //XXX:
+            if (mlir::failed(mlirGen(*forAST.getBody())))
+                return mlir::failure();
+            return mlir::success();
+        }        
 
         /// Emit a new function and add it to the MLIR module.
         mlir::FuncOp mlirGen(FunctionAST &funcAST) {
@@ -440,11 +453,10 @@ namespace {
                           "missing initializer in variable declaration");
                 return nullptr;
             }
-
             mlir::Value value = mlirGen(*init);
             if (!value)
                 return nullptr;
-
+            // XXX:
             // We have the initializer value, but in case the variable was declared
             // with specific shape, we emit a "reshape" operation. It will get
             // optimized out later as needed.
@@ -459,6 +471,15 @@ namespace {
             return value;
         }
 
+        mlir::Value mlirGen(ExeExprAST &exe){
+            //auto lhs = exe.getLHS();
+            auto rhs = exe.getRHS();
+            mlir::Value value = mlirGen(*rhs);
+            if(!value)
+                return nullptr;
+            return value;
+        }
+
         /// Codegen a list of expression, return failure if one of them hit an error.
         mlir::LogicalResult mlirGen(ExprASTList &blockAST) {
             ScopedHashTableScope <StringRef, mlir::Value> var_scope(symbolTable);
@@ -467,11 +488,15 @@ namespace {
                 // print. These can only appear in block list and not in nested
                 // expressions.
                 if (auto *ifop =  dyn_cast<IfExprAST>(expr.get())){
-                    std::cout << "entry if" << std::endl;
                     if(mlir::failed(mlirGen(*ifop)))
                         return mlir::failure();
                     continue;
                 }
+                if (auto *forop =  dyn_cast<ForExprAST>(expr.get())){
+                    if(mlir::failed(mlirGen(*forop)))
+                        return mlir::failure();
+                    continue;
+                }                
                 if (auto *vardecl = dyn_cast<VarDeclExprAST>(expr.get())) {
                     if (!mlirGen(*vardecl))
                         return mlir::failure();
@@ -484,7 +509,11 @@ namespace {
                         return mlir::success();
                     continue;
                 }
-
+                if (auto *exe = dyn_cast<ExeExprAST>(expr.get())) {
+                    if (!mlirGen(*exe))
+                        return mlir::failure();
+                    continue;
+                }
                 // Generic expression dispatch codegen.
                 if (!mlirGen(*expr))
                     return mlir::failure();

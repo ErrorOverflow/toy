@@ -372,7 +372,13 @@ def IfOp : Toy_Op<"if", [NoSideEffect]>{
     let description = [{
         The "if" branch is envolved with two tensor and one operation.
     }];
-    let arguments = (ins F64Tensor:$value, F64Tensor:$range);
+}
+
+def ForOp : Toy_Op<"for", [NoSideEffect]>{
+    let summary = "for branch";
+    let description = [{
+        The "for" branch is envolved with two tensor and one operation.
+    }];
 }
 
 #endif // TOY_OPS

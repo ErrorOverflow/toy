@@ -42,6 +42,8 @@ namespace toy {
             Expr_Call,
             Expr_Print,
             Expr_IfOp,
+            Expr_ForOp,
+            Expr_Exe
         };
 
         ExprAST(ExprASTKind kind, Location location)
@@ -129,6 +131,26 @@ namespace toy {
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_VarDecl; }
     };
 
+/// Expression class for execution.
+    class ExeExprAST : public ExprAST {
+        std::string lhs;
+        std::unique_ptr <ExprAST> rhs;
+
+    public:
+        ExeExprAST(Location loc, llvm::StringRef lhs,
+                       std::unique_ptr <ExprAST> rhs)
+                : ExprAST(Expr_VarDecl, loc), lhs(lhs),
+                  rhs(std::move(rhs)) {}
+
+        llvm::StringRef getLHS() { return lhs; }
+
+        ExprAST *getRHS() { return rhs.get(); }
+
+        /// LLVM style RTTI
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_Exe; }
+    };
+
+
 /// Expression class for a return operator.
     class ReturnExprAST : public ExprAST {
         llvm::Optional <std::unique_ptr<ExprAST>> expr;
@@ -203,34 +225,48 @@ namespace toy {
 /// Expression class for a if operator.
     class IfExprAST : public ExprAST {
         Location location;
-        //std::string op;
-        //std::unique_ptr <ExprAST> lhs, rhs;
         std::unique_ptr <ExprAST> value;
         std::unique_ptr <ExprASTList> body;
 
     public:
-        //llvm::StringRef getOp() { return op; }
-
-        //ExprAST *getLHS() { return lhs.get(); }
-
-        //ExprAST *getRHS() { return rhs.get(); }
-
-        uint32_t getBodyNum() { return body.get()->size(); }
+        ExprAST *getValue() { return value.get(); }
 
         ExprASTList *getBody() { return body.get(); }
 
-        ExprAST *getValue() { return value.get(); }
-
-        // IfExprAST(Location loc, std::string Op, std::unique_ptr <ExprAST> lhs,
-        //               std::unique_ptr <ExprAST> rhs, std::unique_ptr <ExprASTList> body)
-        //         : ExprAST(Expr_IfOp, loc), op(Op), lhs(std::move(lhs)),
-        //           rhs(std::move(rhs)), body(std::move(body)) {}
+        uint32_t getBodyNum() { return body.get()->size(); }
 
         IfExprAST(Location loc, std::unique_ptr <ExprAST> value, 
             std::unique_ptr <ExprASTList> body) : ExprAST(Expr_IfOp, loc), value(std::move(value)),
             body(std::move(body)) {}
 
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_IfOp; }
+    };
+
+/// Expression class for a 'for' operator.
+    class ForExprAST : public ExprAST {
+        Location location;
+        std::unique_ptr <VarDeclExprAST> decl;
+        std::unique_ptr <ExprAST> value;
+        std::unique_ptr <ExeExprAST> expr;
+        std::unique_ptr <ExprASTList> body;
+
+    public:
+        VarDeclExprAST *getDecl() { return decl.get(); }
+
+        ExprAST *getValue() { return value.get(); }
+        
+        ExeExprAST *getExpr() { return expr.get(); }
+
+        ExprASTList *getBody() { return body.get(); }
+
+        uint32_t getBodyNum() { return body.get()->size(); }
+
+        ForExprAST(Location loc, std::unique_ptr <VarDeclExprAST> decl, 
+            std::unique_ptr <ExprAST> value, std::unique_ptr <ExeExprAST> expr,
+            std::unique_ptr <ExprASTList> body) : ExprAST(Expr_ForOp, loc), decl(std::move(decl)),
+            value(std::move(value)), expr(std::move(expr)), body(std::move(body)) {}
+
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_ForOp; }
     };
 
 /// This class represents the "prototype" for a function, which captures its

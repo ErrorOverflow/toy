@@ -128,6 +128,40 @@ def MulOp : Relay_Op<"mul"> {
   >];
 }
 
+def BgtzOp : Relay_Op<"bgtz"> {
+  let summary = "element-wise multiplication operation";
+  let description = [{
+    The "bgtz" operation performs element-wise multiplication between two
+    tensors. The shapes of the tensor operands are expected to match.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildBgtzOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
+def BltzOp : Relay_Op<"bltz"> {
+  let summary = "element-wise multiplication operation";
+  let description = [{
+    The "bltz" operation performs element-wise multiplication between two
+    tensors. The shapes of the tensor operands are expected to match.
+  }];
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildBltzOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
 def Conv1dOp : Relay_Op<"conv1d"> {
   let summary = "element-wise addition operation";
   let description = [{
@@ -277,5 +311,19 @@ def BiasAddOp : Relay_Op<"bias_add"> {
       buildBiasAddOp(b, result, lhs, rhs);
     }]
   >];
+}
+
+def IfOp : Relay_Op<"if", [NoSideEffect]>{
+    let summary = "if branch";
+    let description = [{
+        The "if" branch is envolved with two tensor and one operation.
+    }];
+}
+
+def ForOp : Relay_Op<"for", [NoSideEffect]>{
+    let summary = "for branch";
+    let description = [{
+        The "for" branch is envolved with two tensor and one operation.
+    }];
 }
 #endif // Relay_OpS
