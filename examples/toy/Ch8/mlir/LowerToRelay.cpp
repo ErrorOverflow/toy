@@ -93,8 +93,9 @@ namespace {
     template<typename Op, typename LoweredOp>
     struct UnaryOpLowering : public ConversionPattern {
         UnaryOpLowering(MLIRContext *ctx) : ConversionPattern(Op::getOperationName(), 1, ctx) {}
+
         PatternMatchResult matchAndRewrite(Operation *op, ArrayRef <Value> operands,
-                        ConversionPatternRewriter &rewriter) const final {
+                                           ConversionPatternRewriter &rewriter) const final {
             auto loc = op->getLoc();
             auto type = op->getResult(0).getType();
             auto opRelay = rewriter.create<LoweredOp>(loc, type, operands[0]);
@@ -105,8 +106,8 @@ namespace {
 
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
     using MulOpLowering = BinaryOpLowering<toy::MulOp, relay::MulOp>;
-    using BgtzOpLowering = BinaryOpLowering<toy::BgtzOp, relay::BgtzOp>; 
-    using BltzOpLowering = BinaryOpLowering<toy::BltzOp, relay::BltzOp>; 
+    using BgtzOpLowering = BinaryOpLowering<toy::BgtzOp, relay::BgtzOp>;
+    using BltzOpLowering = BinaryOpLowering<toy::BltzOp, relay::BltzOp>;
     using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
     using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
     using Conv1dOpLowering = BinaryOpLowering<toy::Conv1dOp, relay::Conv1dOp>;
@@ -162,7 +163,7 @@ namespace {
                 : ConversionPattern(toy::PrintOp::getOperationName(), 1, ctx) {}
 
         PatternMatchResult matchAndRewrite(Operation *op, ArrayRef <Value> operands,
-                        ConversionPatternRewriter &rewriter) const final {
+                                           ConversionPatternRewriter &rewriter) const final {
             //auto loc = op->getLoc();
             //auto printopRelay = rewriter.create<relay::PrintOp>(loc,operands[0]);
             rewriter.eraseOp(op);
@@ -220,7 +221,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // Now that the conversion target has been defined, we just need to provide
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
-    patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, 
+    patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering,
             ReshapeOpLowering, TransposeOpLowering, Conv1dOpLowering, PrintOpLowering>(&getContext());

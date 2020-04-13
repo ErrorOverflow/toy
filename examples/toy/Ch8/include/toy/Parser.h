@@ -57,7 +57,7 @@ namespace toy {
         }
 
     private:
-        Lexer &lexer;     
+        Lexer &lexer;
 
         /// Parse a if block.
         /// if := ([primary { < | > } primary]) block ;
@@ -87,7 +87,7 @@ namespace toy {
             auto expr_list = parseBlock();
 
             return std::make_unique<ForExprAST>
-                (std::move(loc), std::move(decl), std::move(value), std::move(expr),std::move(expr_list));
+                    (std::move(loc), std::move(decl), std::move(value), std::move(expr), std::move(expr_list));
         }
 
         /// Parse a return statement.
@@ -375,12 +375,12 @@ namespace toy {
             auto loc = lexer.getLastLocation();
             if (lexer.getCurToken() != tok_identifier)
                 return parseError<ExeExprAST>("identified",
-                                                  "in execution");
+                                              "in execution");
             std::string lhs(lexer.getId());
             lexer.consume(tok_identifier);
             lexer.consume(Token('='));
             auto rhs = parseExpression();
-            
+
             return std::make_unique<ExeExprAST>(std::move(loc), std::move(lhs), std::move(rhs));
         }
 

@@ -138,7 +138,7 @@ namespace toy {
 
     public:
         ExeExprAST(Location loc, llvm::StringRef lhs,
-                       std::unique_ptr <ExprAST> rhs)
+                   std::unique_ptr <ExprAST> rhs)
                 : ExprAST(Expr_VarDecl, loc), lhs(lhs),
                   rhs(std::move(rhs)) {}
 
@@ -235,9 +235,9 @@ namespace toy {
 
         uint32_t getBodyNum() { return body.get()->size(); }
 
-        IfExprAST(Location loc, std::unique_ptr <ExprAST> value, 
-            std::unique_ptr <ExprASTList> body) : ExprAST(Expr_IfOp, loc), value(std::move(value)),
-            body(std::move(body)) {}
+        IfExprAST(Location loc, std::unique_ptr <ExprAST> value,
+                  std::unique_ptr <ExprASTList> body) : ExprAST(Expr_IfOp, loc), value(std::move(value)),
+                                                        body(std::move(body)) {}
 
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_IfOp; }
     };
@@ -254,17 +254,18 @@ namespace toy {
         VarDeclExprAST *getDecl() { return decl.get(); }
 
         ExprAST *getValue() { return value.get(); }
-        
+
         ExeExprAST *getExpr() { return expr.get(); }
 
         ExprASTList *getBody() { return body.get(); }
 
         uint32_t getBodyNum() { return body.get()->size(); }
 
-        ForExprAST(Location loc, std::unique_ptr <VarDeclExprAST> decl, 
-            std::unique_ptr <ExprAST> value, std::unique_ptr <ExeExprAST> expr,
-            std::unique_ptr <ExprASTList> body) : ExprAST(Expr_ForOp, loc), decl(std::move(decl)),
-            value(std::move(value)), expr(std::move(expr)), body(std::move(body)) {}
+        ForExprAST(Location loc, std::unique_ptr <VarDeclExprAST> decl,
+                   std::unique_ptr <ExprAST> value, std::unique_ptr <ExeExprAST> expr,
+                   std::unique_ptr <ExprASTList> body) : ExprAST(Expr_ForOp, loc), decl(std::move(decl)),
+                                                         value(std::move(value)), expr(std::move(expr)),
+                                                         body(std::move(body)) {}
 
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_ForOp; }
     };

@@ -100,7 +100,7 @@ static std::string loc(T *node) {
 void ASTDumper::dump(ExprAST *expr) {
     mlir::TypeSwitch<ExprAST *>(expr)
             .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST, IfExprAST, ExeExprAST,
-                    ForExprAST,PrintExprAST, ReturnExprAST, VarDeclExprAST, VariableExprAST>(
+                    ForExprAST, PrintExprAST, ReturnExprAST, VarDeclExprAST, VariableExprAST>(
                     [&](auto *node) { this->dump(node); })
             .Default([&](ExprAST *) {
                 // No match, fallback to a generic message

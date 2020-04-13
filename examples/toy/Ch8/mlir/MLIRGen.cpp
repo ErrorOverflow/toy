@@ -129,31 +129,31 @@ namespace {
             auto func_type = builder.getFunctionType(arg_types, llvm::None);
             return mlir::FuncOp::create(location, proto.getName(), func_type);
         }
-        
-        mlir::LogicalResult mlirGen(IfExprAST &ifAST){
+
+        mlir::LogicalResult mlirGen(IfExprAST &ifAST) {
             auto location = loc(ifAST.loc());
             builder.create<IfOp>(location);
             mlir::Value v = mlirGen(*ifAST.getValue());
-            mlir::Value block_range = builder.create<ConstantOp>(location, ifAST.getBodyNum());
-            if(!v || !block_range)
+            //mlir::Value block_range = builder.create<ConstantOp>(location, ifAST.getBodyNum());
+            if (!v)
                 return mlir::failure();
             if (mlir::failed(mlirGen(*ifAST.getBody())))
                 return mlir::failure();
             return mlir::success();
         }
 
-        mlir::LogicalResult mlirGen(ForExprAST &forAST){
+        mlir::LogicalResult mlirGen(ForExprAST &forAST) {
             auto location = loc(forAST.loc());
-            builder.create<ForOp>(location);
             mlirGen(*forAST.getDecl());
+            builder.create<ForOp>(location);
             mlirGen(*forAST.getValue());
             mlirGen(*forAST.getExpr());
-            builder.create<ConstantOp>(location, forAST.getBodyNum());
-            //XXX:
+            //builder.create<ConstantOp>(location, forAST.getBodyNum());
+            //TODO: error?
             if (mlir::failed(mlirGen(*forAST.getBody())))
                 return mlir::failure();
             return mlir::success();
-        }        
+        }
 
         /// Emit a new function and add it to the MLIR module.
         mlir::FuncOp mlirGen(FunctionAST &funcAST) {
@@ -371,7 +371,7 @@ namespace {
                 }
                 return builder.create<SoftmaxOp>(location, operands[0]);
             }
-            
+
             if (callee == "conv1d") {
                 if (call.getArgs().size() != 2) {
                     emitError(location, "MLIR codegen encountered an error: toy.conv1d "
@@ -461,8 +461,8 @@ namespace {
             // with specific shape, we emit a "reshape" operation. It will get
             // optimized out later as needed.
             if (!vardecl.getType().shape.empty()) {
-                value = builder.create<ReshapeOp>(loc(vardecl.loc()),
-                                                  getType(vardecl.getType()), value);
+                value = builder.create<ReshapeOp>
+                        (loc(vardecl.loc()), getType(vardecl.getType()), value);
             }
 
             // Register the value in the symbol table.
@@ -471,11 +471,11 @@ namespace {
             return value;
         }
 
-        mlir::Value mlirGen(ExeExprAST &exe){
+        mlir::Value mlirGen(ExeExprAST &exe) {
             //auto lhs = exe.getLHS();
             auto rhs = exe.getRHS();
             mlir::Value value = mlirGen(*rhs);
-            if(!value)
+            if (!value)
                 return nullptr;
             return value;
         }
@@ -487,16 +487,16 @@ namespace {
                 // Specific handling for variable declarations, return statement, and
                 // print. These can only appear in block list and not in nested
                 // expressions.
-                if (auto *ifop =  dyn_cast<IfExprAST>(expr.get())){
-                    if(mlir::failed(mlirGen(*ifop)))
+                if (auto *ifop = dyn_cast<IfExprAST>(expr.get())) {
+                    if (mlir::failed(mlirGen(*ifop)))
                         return mlir::failure();
                     continue;
                 }
-                if (auto *forop =  dyn_cast<ForExprAST>(expr.get())){
-                    if(mlir::failed(mlirGen(*forop)))
+                if (auto *forop = dyn_cast<ForExprAST>(expr.get())) {
+                    if (mlir::failed(mlirGen(*forop)))
                         return mlir::failure();
                     continue;
-                }                
+                }
                 if (auto *vardecl = dyn_cast<VarDeclExprAST>(expr.get())) {
                     if (!mlirGen(*vardecl))
                         return mlir::failure();
