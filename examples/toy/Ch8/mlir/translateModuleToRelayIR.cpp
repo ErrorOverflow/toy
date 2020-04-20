@@ -27,6 +27,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/ScopedHashTable.h"
 
 #include "mlir/Dialect/AffineOps/AffineOps.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
@@ -62,7 +63,7 @@ namespace {
         std::vector <uint32_t> loop_round;
         std::vector <field> loop_field;
         std::string func_para_define;
-        std::unordered_map<uint32_t, std::string> &hashtable;
+        llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable;
 
         void Unary2Relay(mlir::Operation &op, std::string convert_name) {
             std::cout << "    tmp" << tmp_num << " = " << convert_name << "(";
@@ -92,6 +93,7 @@ namespace {
 
         void Binary2Relay(mlir::Operation &op, std::string convert_name) {
             std::stringstream tmp_expr;
+            std::cout << hashtable.lookup(op.getOperand(0)).str()<<std::endl;
             tmp_expr << "    tmp" << tmp_num << " = " << convert_name << "(";
             size_t len = each_result.size();
             size_t i;
@@ -263,12 +265,8 @@ namespace {
 
 
     public:
-        RelayAPIPass(std::unordered_map<uint32_t, std::string> &hashtable) : hashtable(hashtable){}
+        RelayAPIPass(llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) : hashtable(hashtable){}
         void runOnFunction() override {
-            std::cout << hashtable.size() << std::endl;
-            // for(auto iter : hashtable){
-            //     std::cout << iter.first << ":" << iter.second << std::endl;
-            // } 
             NetBuild();
             for (mlir::Block &block : getFunction()) {
                 indent ++;
@@ -334,7 +332,7 @@ namespace {
     };
 }
 
-std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(std::unordered_map<uint32_t, std::string> &hashtable) {
+std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
     return std::make_unique<RelayAPIPass>(hashtable);
 }
 

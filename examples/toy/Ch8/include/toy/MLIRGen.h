@@ -24,6 +24,8 @@
 #define MLIR_TUTORIAL_TOY_MLIRGEN_H_
 
 #include <memory>
+#include "llvm/ADT/ScopedHashTable.h"
+#include "mlir/IR/Value.h"
 
 namespace mlir {
     class MLIRContext;
@@ -36,7 +38,8 @@ namespace toy {
 
 /// Emit IR for the given Toy moduleAST, returns a newly created MLIR module
 /// or nullptr on failure.
-    mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST);
+    mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST,
+                                llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable);
 } // namespace toy
 
 #endif // MLIR_TUTORIAL_TOY_MLIRGEN_H_

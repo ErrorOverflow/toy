@@ -38,7 +38,7 @@ namespace toy {
     class Parser {
     public:
         /// Create a Parser for the supplied lexer.
-        Parser(Lexer &lexer, std::unordered_map<uint32_t, std::string> &hashtable) : lexer(lexer), hashtable(hashtable) {}
+        Parser(Lexer &lexer) : lexer(lexer) {}
 
         /// Parse a full Module. A module is a list of function definitions.
         std::unique_ptr <ModuleAST> parseModule() {
@@ -59,14 +59,7 @@ namespace toy {
 
     private:
         Lexer &lexer;
-        std::unordered_map<uint32_t, std::string> &hashtable;
-        uint32_t value_id = 0;
 
-        void insert_table(std::string &id){
-            hashtable.insert(std::pair<uint32_t, std::string>(value_id, id));
-            value_id++;
-        }
-        
         /// Parse a if block.
         /// if := ([primary { < | > } primary]) block ;
         std::unique_ptr <IfExprAST> parseIf() {
@@ -360,7 +353,6 @@ namespace toy {
                 return parseError<VarDeclExprAST>("identified",
                                                   "after 'var' declaration");
             std::string id(lexer.getId());
-            insert_table(id);
             lexer.getNextToken(); // eat id
 
             std::unique_ptr <VarType> type; // Type is optional, it can be inferred

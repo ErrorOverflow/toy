@@ -61,7 +61,9 @@ namespace {
 /// analysis and transformation based on these high level semantics.
     class MLIRGenImpl {
     public:
-        MLIRGenImpl(mlir::MLIRContext &context) : builder(&context) {}
+        MLIRGenImpl(mlir::MLIRContext &context, 
+                    llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) 
+                    : builder(&context), hashtable(hashtable) {}
 
         /// Public API: convert the AST for a Toy module (source file) to an MLIR
         /// Module operation.
@@ -69,7 +71,6 @@ namespace {
             // We create an empty MLIR module and codegen functions one at a time and
             // add them to the module.
             theModule = mlir::ModuleOp::create(builder.getUnknownLoc());
-            ScopedHashTableScope <mlir::Value, llvm::StringRef> var_scope(hashtable);
             for (FunctionAST &F : moduleAST) {
                 auto func = mlirGen(F);
                 if (!func)
@@ -102,7 +103,7 @@ namespace {
         /// added to the mapping. When the processing of a function is terminated, the
         /// scope is destroyed and the mappings created in this scope are dropped.
         llvm::ScopedHashTable <StringRef, mlir::Value> symbolTable;
-        llvm::ScopedHashTable <mlir::Value, StringRef> hashtable;
+        llvm::ScopedHashTable <mlir::Value, StringRef> &hashtable;
 
         void insert_table(StringRef var, mlir::Value value){
             hashtable.insert(value, var);
@@ -549,8 +550,9 @@ namespace toy {
 
 // The public API for codegen.
     mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
-                                  ModuleAST &moduleAST) {
-        return MLIRGenImpl(context).mlirGen(moduleAST);
+                                  ModuleAST &moduleAST,
+                                  llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
+        return MLIRGenImpl(context, hashtable).mlirGen(moduleAST);
     }
 
 } // namespace toy

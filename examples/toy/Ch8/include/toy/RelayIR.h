@@ -2,6 +2,7 @@
 #define MLIR_TARGET_RELAYIR_H
 
 #include <memory>
+#include "llvm/ADT/ScopedHashTable.h"
 
 namespace mlir {
 
@@ -12,7 +13,7 @@ namespace mlir {
     int translateModuleToRelayIR(ModuleOp m);
 
     namespace relay {
-        std::unique_ptr <mlir::Pass> createRelayAPIPass(std::unordered_map<uint32_t, std::string> &hashtable);
+        std::unique_ptr <mlir::Pass> createRelayAPIPass(llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable);
     }
 
 } // namespace mlir

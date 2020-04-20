@@ -97,7 +97,7 @@ static cl::opt<enum Action> emitAction(
 static cl::opt<bool> EnableOpt("opt", cl::desc("Enable optimizations"));
 
 /// Returns a Toy AST resulting from parsing the file or a nullptr on error.
-std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename, std::unordered_map<uint32_t, std::string> &hashtable) {
+std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
     llvm::ErrorOr <std::unique_ptr<llvm::MemoryBuffer>> FileOrErr =
             llvm::MemoryBuffer::getFileOrSTDIN(filename);
     if (std::error_code EC = FileOrErr.getError()) {
@@ -106,16 +106,17 @@ std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename, std::u
     }
     auto buffer = FileOrErr.get()->getBuffer();
     LexerBuffer lexer(buffer.begin(), buffer.end(), std::string(filename));
-    Parser parser(lexer, hashtable);
+    Parser parser(lexer);
     return parser.parseModule();
 }
 
-int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, std::unordered_map<uint32_t, std::string> &hashtable) {
+int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, 
+            llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
     // Handle '.toy' input to the compiler.
     if (inputType != InputType::MLIR &&
         !llvm::StringRef(inputFilename).endswith(".mlir")) {
-        auto moduleAST = parseInputFile(inputFilename, hashtable);
-        module = mlirGen(context, *moduleAST);
+        auto moduleAST = parseInputFile(inputFilename);
+        module = mlirGen(context, *moduleAST, hashtable);
         return !module ? 1 : 0;
     }
     // Otherwise, the input is '.mlir'.
@@ -139,7 +140,7 @@ int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, std::uno
 
 int loadAndProcessMLIR(mlir::MLIRContext &context,
                        mlir::OwningModuleRef &module, 
-                       std::unordered_map<uint32_t, std::string> &hashtable) {
+                       llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
     if (int error = loadMLIR(context, module, hashtable))
         return error;
     mlir::PassManager pm(&context);
@@ -188,13 +189,13 @@ int loadAndProcessMLIR(mlir::MLIRContext &context,
     return 0;
 }
 
-int dumpAST(std::unordered_map<uint32_t, std::string> &hashtable) {
+int dumpAST() {
     if (inputType == InputType::MLIR) {
         llvm::errs() << "Can't dump a Toy AST when the input is MLIR\n";
         return 5;
     }
 
-    auto moduleAST = parseInputFile(inputFilename, hashtable);
+    auto moduleAST = parseInputFile(inputFilename);
     if (!moduleAST)
         return 1;
 
@@ -255,11 +256,11 @@ int runJit(mlir::ModuleOp module) {
 int main(int argc, char **argv) {
     mlir::registerPassManagerCLOptions();
     cl::ParseCommandLineOptions(argc, argv, "toy compiler\n");
-    std::unordered_map<uint32_t, std::string> ssa_hashtable;
-    llvm::ScopedHashTable <mlir::Value, StringRef> hashtable;
+    llvm::ScopedHashTable <mlir::Value, llvm::StringRef> ssa_hashtable;
+    llvm::ScopedHashTableScope <mlir::Value, llvm::StringRef> var_scope(ssa_hashtable);
 
     if (emitAction == Action::DumpAST)
-        return dumpAST(ssa_hashtable);
+        return dumpAST();
 
     // If we aren't dumping the AST, then we are compiling with/to MLIR.
 
