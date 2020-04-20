@@ -92,6 +92,47 @@ def ConstantOp : Toy_Op<"constant", [NoSideEffect]> {
   let verifier = [{ return ::verify(*this); }];
 }
 
+def ConstOp : Toy_Op<"const", [NoSideEffect]> {
+  // Provide a summary and description for this operation. This can be used to
+  // auto-generate documenatation of the operations within our dialect.
+  let summary = "const";
+  let description = [{
+    Const operation turns a literal into an SSA value. The data is attached
+    to the operation as an attribute. For example:
+
+    ```mlir
+      %0 = "toy.const"()
+         { value = dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]> : tensor<2x3xf64> }
+        : () -> tensor<2x3xf64>
+    ```
+  }];
+
+  // The const operation takes an attribute as the only input.
+  let arguments = (ins F64ElementsAttr:$value);
+
+  // The const operation returns a single value of TensorType.
+  let results = (outs F64Tensor);
+
+  // Add custom build methods for the const operation. These method populates
+  // the `state` that MLIR uses to create operations, i.e. these are used when
+  // using `builder.create<ConstOp>(...)`.
+  let builders = [
+    // Build a const with a given const tensor value.
+    OpBuilder<"Builder *builder, OperationState &result, "
+              "DenseElementsAttr value", [{
+      build(builder, result, value.getType(), value);
+    }]>,
+
+    // Build a const with a given const floating-point value.
+    OpBuilder<"Builder *builder, OperationState &result, double value", [{
+      buildConstOp(builder, result, value);
+    }]>
+  ];
+
+  // Invoke a static verify method to verify this const operation.
+  let verifier = [{ return ::verify(*this); }];
+}
+
 def AddOp : Toy_Op<"add",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "element-wise addition operation";
@@ -380,5 +421,27 @@ def ForOp : Toy_Op<"for", [NoSideEffect]>{
         The "for" branch is envolved with two tensor and one operation.
     }];
 }
+
+def YieldOp : Toy_Op<"yield", [Terminator]> {
+  let summary = "loop yield and termination operation";
+  let description = [{
+    "loop.yield" yields an SSA value from a loop dialect op region and
+    terminates the regions. The semantics of how the values are yielded
+    is defined by the parent operation. 
+    If "loop.yield" has any operands, the operands must match the parent
+    operation's results. 
+    If the parent operation defines no values, then the "loop.yield" may be 
+    left out in the custom syntax and the builders will insert one implicitly.
+    Otherwise, it has to be present in the syntax to indicate which values
+    are yielded. 
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$results);
+  let builders = [
+    OpBuilder<"Builder *builder, OperationState &result", [{ /* nothing to do */ }]>
+  ];
+}
+
+
 
 #endif // TOY_OPS

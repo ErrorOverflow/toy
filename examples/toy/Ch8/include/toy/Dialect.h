@@ -23,10 +23,14 @@
 #ifndef MLIR_TUTORIAL_TOY_DIALECT_H_
 #define MLIR_TUTORIAL_TOY_DIALECT_H_
 
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/Function.h"
 #include "mlir/IR/StandardTypes.h"
 #include "toy/ShapeInferenceInterface.h"
+#include "mlir/IR/OpDefinition.h"
+#include "mlir/Transforms/LoopLikeInterface.h"
 
 namespace mlir {
     namespace toy {

@@ -18,7 +18,9 @@
 // This file implements the entry point for the Toy compiler.
 //
 //===----------------------------------------------------------------------===//
-#include<string.h>
+#include <string.h>
+#include <unordered_map>
+#include <vector>
 #include "toy/Dialect.h"
 #include "toy/MLIRGen.h"
 #include "toy/Parser.h"
@@ -107,15 +109,14 @@ std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
     return parser.parseModule();
 }
 
-int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module) {
+int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, std::unordered_map<std::string, std::vector<uint32_t>> &hashtable) {
     // Handle '.toy' input to the compiler.
     if (inputType != InputType::MLIR &&
         !llvm::StringRef(inputFilename).endswith(".mlir")) {
         auto moduleAST = parseInputFile(inputFilename);
-        module = mlirGen(context, *moduleAST);
+        module = mlirGen(context, *moduleAST, hashtable);
         return !module ? 1 : 0;
     }
-
     // Otherwise, the input is '.mlir'.
     llvm::ErrorOr <std::unique_ptr<llvm::MemoryBuffer>> fileOrErr =
             llvm::MemoryBuffer::getFileOrSTDIN(inputFilename);
@@ -136,10 +137,10 @@ int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module) {
 }
 
 int loadAndProcessMLIR(mlir::MLIRContext &context,
-                       mlir::OwningModuleRef &module) {
-    if (int error = loadMLIR(context, module))
+                       mlir::OwningModuleRef &module, 
+                       std::unordered_map<std::string, std::vector<uint32_t>> &hashtable) {
+    if (int error = loadMLIR(context, module, hashtable))
         return error;
-
     mlir::PassManager pm(&context);
     // Apply any generic pass manager command line options and run the pipeline.
     applyPassManagerCLOptions(pm);
@@ -177,8 +178,8 @@ int loadAndProcessMLIR(mlir::MLIRContext &context,
     }
 
     if (isLoweringToIR) {
-        // Finish lowering the toy IR to the LLVM dialect.
-        pm.addPass(mlir::relay::createRelayAPIPass());
+        // Finish lowering the toy IR to the relay.
+        pm.addPass(mlir::relay::createRelayAPIPass(hashtable));
     }
 
     if (mlir::failed(pm.run(*module)))
@@ -224,10 +225,6 @@ int dumpLLVMIR(mlir::ModuleOp module) {
     return 0;
 }
 
-int dumpRelayIR(mlir::ModuleOp module) {
-    return 0;
-}
-
 int runJit(mlir::ModuleOp module) {
     // Initialize LLVM targets.
     llvm::InitializeNativeTarget();
@@ -257,7 +254,7 @@ int runJit(mlir::ModuleOp module) {
 int main(int argc, char **argv) {
     mlir::registerPassManagerCLOptions();
     cl::ParseCommandLineOptions(argc, argv, "toy compiler\n");
-
+    std::unordered_map<std::string, std::vector<uint32_t>> ssa_hashtable;
     if (emitAction == Action::DumpAST)
         return dumpAST();
 
@@ -269,7 +266,7 @@ int main(int argc, char **argv) {
 
     mlir::MLIRContext context;
     mlir::OwningModuleRef module;
-    if (int error = loadAndProcessMLIR(context, module))
+    if (int error = loadAndProcessMLIR(context, module, ssa_hashtable))
         return error;
 
     // If we aren't exporting to non-mlir, then we are done.
@@ -278,19 +275,14 @@ int main(int argc, char **argv) {
         module->dump();
         return 0;
     }
-
     // Check to see if we are compiling to LLVM IR.
     if (emitAction == Action::DumpLLVMIR)
         return dumpLLVMIR(*module);
-
-    if (emitAction == Action::DumpRelayIR) {
-        return dumpRelayIR(*module);
-    }
 
     // Otherwise, we must be running the jit.
     if (emitAction == Action::RunJIT)
         return runJit(*module);
 
-    llvm::errs() << "No action specified (parsing only?), use -emit=<action>\n";
+    //llvm::errs() << "No action specified , use -emit=<action>\n";
     return -1;
 }

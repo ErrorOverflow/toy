@@ -110,6 +110,44 @@ static mlir::LogicalResult verify(ConstantOp op) {
     return mlir::success();
 }
 
+static void buildConstOp(mlir::Builder *builder, mlir::OperationState &state,
+                            double value) {
+    auto dataType = RankedTensorType::get({}, builder->getF64Type());
+    auto dataAttribute = DenseElementsAttr::get(dataType, value);
+    ConstOp::build(builder, state, dataType, dataAttribute);
+}
+
+/// Verifier for the const operation. This corresponds to the `::verify(...)`
+/// in the op definition.
+static mlir::LogicalResult verify(ConstOp op) {
+    // If the return type of the const is not an unranked tensor, the shape
+    // must match the shape of the attribute holding the data.
+    auto resultType = op.getResult().getType().cast<RankedTensorType>();
+    if (!resultType)
+        return success();
+
+    // Check that the rank of the attribute type matches the rank of the const
+    // result type.
+    auto attrType = op.value().getType().cast<mlir::TensorType>();
+    if (attrType.getRank() != resultType.getRank()) {
+        return op.emitOpError(
+                "return type must match the one of the attached value "
+                "attribute: ")
+                << attrType.getRank() << " != " << resultType.getRank();
+    }
+
+    // Check that each of the dimensions match between the two types.
+    for (int dim = 0, dimE = attrType.getRank(); dim < dimE; ++dim) {
+        if (attrType.getShape()[dim] != resultType.getShape()[dim]) {
+            return op.emitOpError(
+                    "return type shape mismatches its attribute at dimension ")
+                    << dim << ": " << attrType.getShape()[dim]
+                    << " != " << resultType.getShape()[dim];
+        }
+    }
+    return mlir::success();
+}
+
 static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));

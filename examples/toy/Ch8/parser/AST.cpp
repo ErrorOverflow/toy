@@ -113,6 +113,7 @@ void ASTDumper::dump(ExprAST *expr) {
 /// recurse in the initializer value.
 void ASTDumper::dump(VarDeclExprAST *varDecl) {
     INDENT();
+    printf("decl\n");
     llvm::errs() << "VarDecl " << varDecl->getName();
     dump(varDecl->getType());
     llvm::errs() << " " << loc(varDecl) << "\n";
@@ -122,6 +123,7 @@ void ASTDumper::dump(VarDeclExprAST *varDecl) {
 /// print execution
 void ASTDumper::dump(ExeExprAST *exe) {
     INDENT();
+    printf("exe\n");
     llvm::errs() << "Execution " << exe->getLHS();
     llvm::errs() << " " << loc(exe) << "\n";
     dump(exe->getRHS());

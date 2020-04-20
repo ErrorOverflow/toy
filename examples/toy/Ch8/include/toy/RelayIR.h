@@ -12,7 +12,7 @@ namespace mlir {
     int translateModuleToRelayIR(ModuleOp m);
 
     namespace relay {
-        std::unique_ptr <mlir::Pass> createRelayAPIPass();
+        std::unique_ptr <mlir::Pass> createRelayAPIPass(std::unordered_map<std::string, std::vector<uint32_t>> &hashtable);
     }
 
 } // namespace mlir

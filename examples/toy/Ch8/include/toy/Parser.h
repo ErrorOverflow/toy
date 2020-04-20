@@ -22,10 +22,11 @@
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include <map>
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <unordered_map>
+#include <string>
 
 namespace toy {
 
@@ -58,7 +59,6 @@ namespace toy {
 
     private:
         Lexer &lexer;
-
         /// Parse a if block.
         /// if := ([primary { < | > } primary]) block ;
         std::unique_ptr <IfExprAST> parseIf() {
@@ -203,7 +203,6 @@ namespace toy {
         ///   ::= identifier '(' expression ')'
         std::unique_ptr <ExprAST> parseIdentifierExpr() {
             std::string name(lexer.getId());
-
             auto loc = lexer.getLastLocation();
             lexer.getNextToken(); // eat identifier.
 
@@ -430,10 +429,10 @@ namespace toy {
                     isBlock = true;
                 } else {
                     // General expression
-                    auto expr = parseExecution();
-                    if (!expr)
+                    auto exe = parseExecution();
+                    if (!exe)
                         return nullptr;
-                    exprList->push_back(std::move(expr));
+                    exprList->push_back(std::move(exe));
                 }
                 // Ensure that elements are separated by a semicolon.
                 if (lexer.getCurToken() != ';' && !isBlock)

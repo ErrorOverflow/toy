@@ -37,6 +37,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include <numeric>
 #include <iostream>
+#include <unordered_map>
+#include <vector>
 
 using namespace mlir::toy;
 using namespace toy;
@@ -60,7 +62,8 @@ namespace {
 /// analysis and transformation based on these high level semantics.
     class MLIRGenImpl {
     public:
-        MLIRGenImpl(mlir::MLIRContext &context) : builder(&context) {}
+        MLIRGenImpl(mlir::MLIRContext &context,std::unordered_map<std::string, std::vector<uint32_t>> &hashtable)
+                    : builder(&context), hashtable(hashtable) {}
 
         /// Public API: convert the AST for a Toy module (source file) to an MLIR
         /// Module operation.
@@ -90,7 +93,7 @@ namespace {
     private:
         /// A "module" matches a Toy source file: containing a list of functions.
         mlir::ModuleOp theModule;
-
+        std::unordered_map<std::string, std::vector<uint32_t>> &hashtable;
         /// The builder is a helper class to create IR inside a function. The builder
         /// is stateful, in particular it keeps an "insertion point": this is where
         /// the next operations will be introduced.
@@ -134,7 +137,7 @@ namespace {
             auto location = loc(ifAST.loc());
             builder.create<IfOp>(location);
             mlir::Value v = mlirGen(*ifAST.getValue());
-            //mlir::Value block_range = builder.create<ConstantOp>(location, ifAST.getBodyNum());
+            builder.create<ConstOp>(location, ifAST.getBodyNum());
             if (!v)
                 return mlir::failure();
             if (mlir::failed(mlirGen(*ifAST.getBody())))
@@ -148,7 +151,7 @@ namespace {
             builder.create<ForOp>(location);
             mlirGen(*forAST.getValue());
             mlirGen(*forAST.getExpr());
-            //builder.create<ConstantOp>(location, forAST.getBodyNum());
+            builder.create<ConstOp>(location, forAST.getBodyNum());
             //TODO: error?
             if (mlir::failed(mlirGen(*forAST.getBody())))
                 return mlir::failure();
@@ -313,9 +316,8 @@ namespace {
             auto dataAttribute =
                     mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
 
-            // Build the MLIR op `toy.constant`. This invokes the `ConstantOp::build`
-            // method.
-            return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
+            mlir::Value r = builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
+            return r;
         }
 
         /// Recursive helper function to accumulate the data that compose an array
@@ -542,8 +544,9 @@ namespace toy {
 
 // The public API for codegen.
     mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
-                                  ModuleAST &moduleAST) {
-        return MLIRGenImpl(context).mlirGen(moduleAST);
+                                  ModuleAST &moduleAST,
+                                  std::unordered_map<std::string, std::vector<uint32_t>> &hashtable) {
+        return MLIRGenImpl(context, hashtable).mlirGen(moduleAST);
     }
 
 } // namespace toy

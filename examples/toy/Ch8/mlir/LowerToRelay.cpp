@@ -133,6 +133,19 @@ namespace {
             return matchSuccess();
         }
     };
+
+    struct ConstOpLowering : public OpRewritePattern<toy::ConstOp> {
+        using OpRewritePattern<toy::ConstOp>::OpRewritePattern;
+
+        PatternMatchResult matchAndRewrite(toy::ConstOp op,
+                                           PatternRewriter &rewriter) const final {
+            DenseElementsAttr constValue = op.value();
+            Location loc = op.getLoc();
+            auto constRelay = rewriter.create<relay::ConstOp>(loc, constValue.getType(), constValue);
+            rewriter.replaceOp(op, {constRelay});
+            return matchSuccess();
+        }
+    };
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Return operations
 //===----------------------------------------------------------------------===//
@@ -221,7 +234,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // Now that the conversion target has been defined, we just need to provide
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
-    patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering,
+    patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, ConstOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering,
             ReshapeOpLowering, TransposeOpLowering, Conv1dOpLowering, PrintOpLowering>(&getContext());
