@@ -62,7 +62,7 @@ namespace {
         std::vector <uint32_t> loop_round;
         std::vector <field> loop_field;
         std::string func_para_define;
-        std::unordered_map<std::string, std::vector<uint32_t>> &hashtable;
+        std::unordered_map<uint32_t, std::string> &hashtable;
 
         void Unary2Relay(mlir::Operation &op, std::string convert_name) {
             std::cout << "    tmp" << tmp_num << " = " << convert_name << "(";
@@ -263,8 +263,12 @@ namespace {
 
 
     public:
-        RelayAPIPass(std::unordered_map<std::string, std::vector<uint32_t>> &hashtable) : hashtable(hashtable){}
+        RelayAPIPass(std::unordered_map<uint32_t, std::string> &hashtable) : hashtable(hashtable){}
         void runOnFunction() override {
+            std::cout << hashtable.size() << std::endl;
+            // for(auto iter : hashtable){
+            //     std::cout << iter.first << ":" << iter.second << std::endl;
+            // } 
             NetBuild();
             for (mlir::Block &block : getFunction()) {
                 indent ++;
@@ -330,7 +334,7 @@ namespace {
     };
 }
 
-std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(std::unordered_map<std::string, std::vector<uint32_t>> &hashtable) {
+std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(std::unordered_map<uint32_t, std::string> &hashtable) {
     return std::make_unique<RelayAPIPass>(hashtable);
 }
 

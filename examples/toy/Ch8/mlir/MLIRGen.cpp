@@ -38,7 +38,6 @@
 #include <numeric>
 #include <iostream>
 #include <unordered_map>
-#include <vector>
 
 using namespace mlir::toy;
 using namespace toy;
@@ -62,8 +61,7 @@ namespace {
 /// analysis and transformation based on these high level semantics.
     class MLIRGenImpl {
     public:
-        MLIRGenImpl(mlir::MLIRContext &context,std::unordered_map<std::string, std::vector<uint32_t>> &hashtable)
-                    : builder(&context), hashtable(hashtable) {}
+        MLIRGenImpl(mlir::MLIRContext &context) : builder(&context) {}
 
         /// Public API: convert the AST for a Toy module (source file) to an MLIR
         /// Module operation.
@@ -71,7 +69,7 @@ namespace {
             // We create an empty MLIR module and codegen functions one at a time and
             // add them to the module.
             theModule = mlir::ModuleOp::create(builder.getUnknownLoc());
-
+            ScopedHashTableScope <mlir::Value, llvm::StringRef> var_scope(hashtable);
             for (FunctionAST &F : moduleAST) {
                 auto func = mlirGen(F);
                 if (!func)
@@ -93,7 +91,7 @@ namespace {
     private:
         /// A "module" matches a Toy source file: containing a list of functions.
         mlir::ModuleOp theModule;
-        std::unordered_map<std::string, std::vector<uint32_t>> &hashtable;
+
         /// The builder is a helper class to create IR inside a function. The builder
         /// is stateful, in particular it keeps an "insertion point": this is where
         /// the next operations will be introduced.
@@ -104,7 +102,14 @@ namespace {
         /// added to the mapping. When the processing of a function is terminated, the
         /// scope is destroyed and the mappings created in this scope are dropped.
         llvm::ScopedHashTable <StringRef, mlir::Value> symbolTable;
+        llvm::ScopedHashTable <mlir::Value, StringRef> hashtable;
 
+        void insert_table(StringRef var, mlir::Value value){
+            hashtable.insert(value, var);
+            StringRef s = hashtable.lookup(value);
+            std::cout << s.str() << std::endl;
+        }
+        
         /// Helper conversion for a Toy AST location to an MLIR location.
         mlir::Location loc(Location loc) {
             return builder.getFileLineColLoc(builder.getIdentifier(*loc.file), loc.line,
@@ -316,8 +321,7 @@ namespace {
             auto dataAttribute =
                     mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
 
-            mlir::Value r = builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
-            return r;
+            return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
         }
 
         /// Recursive helper function to accumulate the data that compose an array
@@ -462,14 +466,15 @@ namespace {
             // We have the initializer value, but in case the variable was declared
             // with specific shape, we emit a "reshape" operation. It will get
             // optimized out later as needed.
-            if (!vardecl.getType().shape.empty()) {
-                value = builder.create<ReshapeOp>
-                        (loc(vardecl.loc()), getType(vardecl.getType()), value);
-            }
+            // if (!vardecl.getType().shape.empty()) {
+            //     value = builder.create<ReshapeOp>
+            //             (loc(vardecl.loc()), getType(vardecl.getType()), value);
+            // }
 
             // Register the value in the symbol table.
             if (failed(declare(vardecl.getName(), value)))
                 return nullptr;
+            insert_table(vardecl.getName(), value);
             return value;
         }
 
@@ -544,9 +549,8 @@ namespace toy {
 
 // The public API for codegen.
     mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
-                                  ModuleAST &moduleAST,
-                                  std::unordered_map<std::string, std::vector<uint32_t>> &hashtable) {
-        return MLIRGenImpl(context, hashtable).mlirGen(moduleAST);
+                                  ModuleAST &moduleAST) {
+        return MLIRGenImpl(context).mlirGen(moduleAST);
     }
 
 } // namespace toy

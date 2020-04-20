@@ -24,9 +24,6 @@
 #define MLIR_TUTORIAL_TOY_MLIRGEN_H_
 
 #include <memory>
-#include <unordered_map>
-#include <vector>
-#include <string>
 
 namespace mlir {
     class MLIRContext;
@@ -39,7 +36,7 @@ namespace toy {
 
 /// Emit IR for the given Toy moduleAST, returns a newly created MLIR module
 /// or nullptr on failure.
-    mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST, std::unordered_map<std::string, std::vector<uint32_t>> &hashtable);
+    mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST);
 } // namespace toy
 
 #endif // MLIR_TUTORIAL_TOY_MLIRGEN_H_
