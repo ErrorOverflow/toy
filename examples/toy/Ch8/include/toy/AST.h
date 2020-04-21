@@ -43,7 +43,8 @@ namespace toy {
             Expr_Print,
             Expr_IfOp,
             Expr_ForOp,
-            Expr_Exe
+            Expr_Exe,
+            Expr_Const
         };
 
         ExprAST(ExprASTKind kind, Location location)
@@ -131,6 +132,29 @@ namespace toy {
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_VarDecl; }
     };
 
+/// Expression class for defining a variable.
+    class ConstExprAST : public ExprAST {
+        std::string name;
+        VarType type;
+        std::unique_ptr <ExprAST> initVal;
+
+    public:
+        ConstExprAST(Location loc, llvm::StringRef name, VarType type,
+                       std::unique_ptr <ExprAST> initVal)
+                : ExprAST(Expr_Const, loc), name(name), type(std::move(type)),
+                  initVal(std::move(initVal)) {}
+
+        llvm::StringRef getName() { return name; }
+
+        ExprAST *getInitVal() { return initVal.get(); }
+
+        const VarType &getType() { return type; }
+
+        /// LLVM style RTTI
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_Const; }
+    };
+
+
 /// Expression class for execution.
     class ExeExprAST : public ExprAST {
         std::string lhs;
@@ -139,7 +163,7 @@ namespace toy {
     public:
         ExeExprAST(Location loc, llvm::StringRef lhs,
                    std::unique_ptr <ExprAST> rhs)
-                : ExprAST(Expr_VarDecl, loc), lhs(lhs),
+                : ExprAST(Expr_Exe, loc), lhs(lhs),
                   rhs(std::move(rhs)) {}
 
         llvm::StringRef getLHS() { return lhs; }
@@ -245,13 +269,13 @@ namespace toy {
 /// Expression class for a 'for' operator.
     class ForExprAST : public ExprAST {
         Location location;
-        std::unique_ptr <VarDeclExprAST> decl;
+        std::unique_ptr <ConstExprAST> decl;
         std::unique_ptr <ExprAST> value;
         std::unique_ptr <ExeExprAST> expr;
         std::unique_ptr <ExprASTList> body;
 
     public:
-        VarDeclExprAST *getDecl() { return decl.get(); }
+        ConstExprAST *getDecl() { return decl.get(); }
 
         ExprAST *getValue() { return value.get(); }
 
@@ -261,7 +285,7 @@ namespace toy {
 
         uint32_t getBodyNum() { return body.get()->size(); }
 
-        ForExprAST(Location loc, std::unique_ptr <VarDeclExprAST> decl,
+        ForExprAST(Location loc, std::unique_ptr <ConstExprAST> decl,
                    std::unique_ptr <ExprAST> value, std::unique_ptr <ExeExprAST> expr,
                    std::unique_ptr <ExprASTList> body) : ExprAST(Expr_ForOp, loc), decl(std::move(decl)),
                                                          value(std::move(value)), expr(std::move(expr)),

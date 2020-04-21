@@ -45,6 +45,7 @@ namespace toy {
         tok_def = -4,
         tok_if = -7,
         tok_for = -8,
+        tok_const = -9,
 
         // primary
         tok_identifier = -5,
@@ -148,6 +149,8 @@ namespace toy {
                     return tok_def;
                 if (identifierStr == "var")
                     return tok_var;
+                if (identifierStr == "const")
+                    return tok_const;
                 if (identifierStr == "if")
                     return tok_if;
                 if (identifierStr == "for")

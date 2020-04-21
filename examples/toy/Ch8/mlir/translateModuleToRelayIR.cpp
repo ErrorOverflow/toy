@@ -38,6 +38,10 @@
 #include "toy/RelayIR.h"
 #include "toy/RelayDialect.h"
 
+using std::unordered_map;
+using std::cout;
+using std::endl;
+
 int32_t mlir::translateModuleToRelayIR(ModuleOp module) {
     return 0;
 }
@@ -63,15 +67,16 @@ namespace {
         std::vector <uint32_t> loop_round;
         std::vector <field> loop_field;
         std::string func_para_define;
-        llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable;
+        unordered_map <uint32_t, std::string> &hashtable;
 
         void Unary2Relay(mlir::Operation &op, std::string convert_name) {
-            std::cout << "    tmp" << tmp_num << " = " << convert_name << "(";
+            INDENT();
+            std::cout << getString(tmp_num) << " = " << convert_name << "(";
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             if (i == len) std::cout << "error occured!\n";
-            else std::cout << each_name[i] << ")\n";
+            else std::cout << getString(i) << ")\n";
             each_result.push_back(op.getResult(0));
             std::string tmp = "tmp" + std::to_string(tmp_num);
             each_name.push_back(tmp);
@@ -79,7 +84,8 @@ namespace {
         }
 
         void Reshape2Relay(mlir::Operation &op, std::string convert_name) {
-            std::cout << "    tmp" << tmp_num << " = " << convert_name << "(";
+            INDENT();
+            std::cout << "tmp" << tmp_num << " = " << convert_name << "(";
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
@@ -93,12 +99,14 @@ namespace {
 
         void Binary2Relay(mlir::Operation &op, std::string convert_name) {
             std::stringstream tmp_expr;
-            std::cout << hashtable.lookup(op.getOperand(0)).str()<<std::endl;
-            tmp_expr << "    tmp" << tmp_num << " = " << convert_name << "(";
+            INDENT();
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
             size_t len = each_result.size();
             size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << getString(i);
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << each_name[i - 1] << ", " << each_name[i] << ")\n";
+            tmp_expr << ", " << getString(i) << ")\n";
             if (is_loop_field) {
                 while_end.push_back(tmp_expr.str());
             } else {
@@ -115,7 +123,8 @@ namespace {
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             std::string return_var = each_name[i];
-            std::cout << "    return run_infer_type(relay.Function(relay.analysis.free_vars("
+            INDENT();
+            std::cout << "return run_infer_type(relay.Function(relay.analysis.free_vars("
                       << return_var << ")," << return_var << "))\n";
         }
 
@@ -130,13 +139,16 @@ namespace {
         void If2Relay(mlir::Operation &op) {
             // TODO:
             is_loop_field = true;
+            loop_flag = 1;
+            INDENT();
             std::cout << "if";
             loop_field.push_back(field{std::string("if"), line, UINT32_MAX});
         }
 
         void For2Relay(mlir::Operation &op) {
             // TODO:
-
+            INDENT();
+            loop_flag = 2;
             is_loop_field = true;
             std::cout << "while";
             loop_field.push_back(field{std::string("for"), line, UINT32_MAX});
@@ -152,7 +164,8 @@ namespace {
             auto shape = tensorType.getShape();
             int32_t dataNum = 1;
             std::vector <int32_t> shape_vector;
-            std::cout << "    var" << num << " = relay.var(\"var" << num << "\",shape=(";
+            INDENT();
+            std::cout << "var" << num << " = relay.var(\"var" << num << "\",shape=(";
             for (size_t i = 0; i < shape.size(); i++) {
                 if (i != shape.size() - 1) std::cout << shape[i] << ",";
                 else std::cout << shape[i] << "), dtype=\"float64\")\n";
@@ -175,6 +188,7 @@ namespace {
             std::string tmp = "var" + std::to_string(num);
             each_name.push_back(tmp);
             num++;
+            tmp_num++;
         }
 
         void Const2Relay(mlir::Operation &op) {
@@ -186,7 +200,8 @@ namespace {
         }
 
         void Print2Relay(mlir::Operation &op) {
-            std::cout << "    f1 = relay.Function([";
+            INDENT();
+            std::cout << "f1 = relay.Function([";
             for (uint32_t i = 0; i < num; i++) {
                 std::cout << "var" << i;
                 if (i != num - 1) std::cout << ",";
@@ -263,15 +278,21 @@ namespace {
             }
         }
 
+        std::string getString(uint32_t n){
+            return hashtable.find(n)->second;
+        }
 
     public:
-        RelayAPIPass(llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) : hashtable(hashtable){}
+        RelayAPIPass(unordered_map <uint32_t, std::string> &hashtable) : hashtable(hashtable){}
         void runOnFunction() override {
+            indent = 1;
+            for(auto i : hashtable){
+                cout << i.first << " " << i.second << endl;
+            }
             NetBuild();
             for (mlir::Block &block : getFunction()) {
-                indent ++;
                 for (mlir::Operation &op : llvm::make_early_inc_range(block)) {
-                    line ++;
+                    if(!is_loop_field) line ++;
                     std::string op_name = op.getName().getStringRef().str();
                     //std::cout << op_name << std::endl;
                     if (op_name == "relay.constant")
@@ -332,7 +353,7 @@ namespace {
     };
 }
 
-std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
+std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(unordered_map <uint32_t, std::string> &hashtable) {
     return std::make_unique<RelayAPIPass>(hashtable);
 }
 

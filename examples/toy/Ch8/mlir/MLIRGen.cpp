@@ -36,6 +36,7 @@
 #include "llvm/ADT/ScopedHashTable.h"
 #include "llvm/Support/raw_ostream.h"
 #include <numeric>
+#include <string>
 #include <iostream>
 #include <unordered_map>
 
@@ -51,6 +52,7 @@ using llvm::ScopedHashTableScope;
 using llvm::SmallVector;
 using llvm::StringRef;
 using llvm::Twine;
+using std::unordered_map;
 
 namespace {
 
@@ -62,7 +64,7 @@ namespace {
     class MLIRGenImpl {
     public:
         MLIRGenImpl(mlir::MLIRContext &context, 
-                    llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) 
+                    unordered_map <uint32_t, std::string> &hashtable) 
                     : builder(&context), hashtable(hashtable) {}
 
         /// Public API: convert the AST for a Toy module (source file) to an MLIR
@@ -103,14 +105,24 @@ namespace {
         /// added to the mapping. When the processing of a function is terminated, the
         /// scope is destroyed and the mappings created in this scope are dropped.
         llvm::ScopedHashTable <StringRef, mlir::Value> symbolTable;
-        llvm::ScopedHashTable <mlir::Value, StringRef> &hashtable;
+        unordered_map <uint32_t, std::string> &hashtable;
+        uint32_t value_num = 0;
+        uint32_t tmp_num = 0;
+        uint32_t iteration = 0;
 
-        void insert_table(StringRef var, mlir::Value value){
-            hashtable.insert(value, var);
-            StringRef s = hashtable.lookup(value);
-            std::cout << s.str() << std::endl;
+        void insert_table(StringRef var){
+            hashtable.insert(std::pair<uint32_t, std::string>(value_num, var.str()));
+            value_num++;
         }
-        
+
+        void insert_table(){
+            std::string var = "tmp";
+            var += std::to_string(tmp_num);
+            hashtable.insert(std::pair<uint32_t, std::string>(value_num, var));
+            value_num++;
+            tmp_num++;
+        }
+
         /// Helper conversion for a Toy AST location to an MLIR location.
         mlir::Location loc(Location loc) {
             return builder.getFileLineColLoc(builder.getIdentifier(*loc.file), loc.line,
@@ -230,6 +242,7 @@ namespace {
             //    and the result value is returned. If an error occurs we get a nullptr
             //    and propagate.
             //
+            iteration++;
             mlir::Value lhs = mlirGen(*binop.getLHS());
             if (!lhs)
                 return nullptr;
@@ -237,7 +250,10 @@ namespace {
             if (!rhs)
                 return nullptr;
             auto location = loc(binop.loc());
-
+            if(iteration != 1){
+                insert_table();
+                iteration --;
+            }
             // Derive the operation name from the binary operator. At the moment we only
             // support '+' and '*'.
             switch (binop.getOp()) {
@@ -250,7 +266,6 @@ namespace {
                 case '<':
                     return builder.create<BltzOp>(location, lhs, rhs);
             }
-
             emitError(location, "invalid binary operator '") << binop.getOp() << "'";
             return nullptr;
         }
@@ -321,8 +336,9 @@ namespace {
             // tensor literal.
             auto dataAttribute =
                     mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
-
-            return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
+            if(iteration == 0)
+                return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
+            return builder.create<ConstOp>(loc(lit.loc()), type, dataAttribute);
         }
 
         /// Recursive helper function to accumulate the data that compose an array
@@ -425,7 +441,9 @@ namespace {
 
         /// Emit a constant for a single number (FIXME: semantic? broadcast?)
         mlir::Value mlirGen(NumberExprAST &num) {
-            return builder.create<ConstantOp>(loc(num.loc()), num.getValue());
+            if(iteration == 0)
+                return builder.create<ConstantOp>(loc(num.loc()), num.getValue());
+            return builder.create<ConstOp>(loc(num.loc()), num.getValue());
         }
 
         /// Dispatch codegen for the right expression subclass using RTTI.
@@ -461,28 +479,47 @@ namespace {
                 return nullptr;
             }
             mlir::Value value = mlirGen(*init);
+            insert_table(vardecl.getName());
             if (!value)
                 return nullptr;
             // XXX:
             // We have the initializer value, but in case the variable was declared
             // with specific shape, we emit a "reshape" operation. It will get
             // optimized out later as needed.
-            // if (!vardecl.getType().shape.empty()) {
-            //     value = builder.create<ReshapeOp>
-            //             (loc(vardecl.loc()), getType(vardecl.getType()), value);
-            // }
+            if (!vardecl.getType().shape.empty()) {
+                value = builder.create<ReshapeOp>
+                        (loc(vardecl.loc()), getType(vardecl.getType()), value);
+                insert_table(vardecl.getName());
+            }
 
             // Register the value in the symbol table.
             if (failed(declare(vardecl.getName(), value)))
                 return nullptr;
-            insert_table(vardecl.getName(), value);
+            return value;
+        }
+
+        mlir::Value mlirGen(ConstExprAST &constdecl) {
+            auto init = constdecl.getInitVal();
+            if (!init) {
+                emitError(loc(constdecl.loc()),
+                          "missing initializer in variable declaration");
+                return nullptr;
+            }
+            mlir::Value value = mlirGen(*init);
+            insert_table(constdecl.getName());
+            if (!value)
+                return nullptr;
+
+            // Register the value in the symbol table.
+            if (failed(declare(constdecl.getName(), value)))
+                return nullptr;
             return value;
         }
 
         mlir::Value mlirGen(ExeExprAST &exe) {
-            //auto lhs = exe.getLHS();
             auto rhs = exe.getRHS();
             mlir::Value value = mlirGen(*rhs);
+            insert_table(exe.getLHS());
             if (!value)
                 return nullptr;
             return value;
@@ -507,6 +544,11 @@ namespace {
                 }
                 if (auto *vardecl = dyn_cast<VarDeclExprAST>(expr.get())) {
                     if (!mlirGen(*vardecl))
+                        return mlir::failure();
+                    continue;
+                }
+                if (auto *constdecl = dyn_cast<ConstExprAST>(expr.get())) {
+                    if (!mlirGen(*constdecl))
                         return mlir::failure();
                     continue;
                 }
@@ -551,7 +593,7 @@ namespace toy {
 // The public API for codegen.
     mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
                                   ModuleAST &moduleAST,
-                                  llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
+                                  unordered_map <uint32_t, std::string> &hashtable) {
         return MLIRGenImpl(context, hashtable).mlirGen(moduleAST);
     }
 

@@ -79,7 +79,7 @@ namespace toy {
             auto loc = lexer.getLastLocation();
             lexer.consume(tok_for);
             lexer.consume(Token('('));
-            auto decl = parseDeclaration();
+            auto decl = parseConst();
             lexer.consume(Token(';'));
             auto value = parseExpression();
             lexer.consume(Token(';'));
@@ -370,6 +370,26 @@ namespace toy {
                                                     std::move(*type), std::move(expr));
         }
 
+        std::unique_ptr <ConstExprAST> parseConst() {
+            if (lexer.getCurToken() != tok_const)
+                return parseError<ConstExprAST>("const", "to begin declaration");
+            auto loc = lexer.getLastLocation();
+            lexer.getNextToken();
+
+            if (lexer.getCurToken() != tok_identifier)
+                return parseError<ConstExprAST>("identified",
+                                                  "after 'var' declaration");
+            std::string id(lexer.getId());
+            lexer.getNextToken();
+
+            std::unique_ptr <VarType> type = std::make_unique<VarType>();
+
+            lexer.consume(Token('='));
+            auto expr = parseExpression();
+            return std::make_unique<ConstExprAST>(std::move(loc), std::move(id),
+                                                    std::move(*type), std::move(expr));
+        }
+
         /// execution ::= primary = expression
         std::unique_ptr <ExeExprAST> parseExecution() {
             auto loc = lexer.getLastLocation();
@@ -377,10 +397,10 @@ namespace toy {
                 return parseError<ExeExprAST>("identified",
                                               "in execution");
             std::string lhs(lexer.getId());
-            lexer.consume(tok_identifier);
+            lexer.getNextToken();
             lexer.consume(Token('='));
             auto rhs = parseExpression();
-
+            //std::cout << 233 << std::endl;
             return std::make_unique<ExeExprAST>(std::move(loc), std::move(lhs), std::move(rhs));
         }
 
@@ -410,7 +430,13 @@ namespace toy {
                     if (!varDecl)
                         return nullptr;
                     exprList->push_back(std::move(varDecl));
-                } else if (lexer.getCurToken() == tok_return) {
+                } else if(lexer.getCurToken() == tok_const){
+                    auto constDecl = parseConst();
+                    if (!constDecl)
+                        return nullptr;
+                    exprList->push_back(std::move(constDecl));
+                }
+                else if (lexer.getCurToken() == tok_return) {
                     // Return statement
                     auto ret = parseReturn();
                     if (!ret)
@@ -428,12 +454,14 @@ namespace toy {
                         return nullptr;
                     exprList->push_back(std::move(forOp));
                     isBlock = true;
-                } else {
-                    // General expression
+                } else if (lexer.getCurToken() == tok_identifier){
                     auto exe = parseExecution();
                     if (!exe)
                         return nullptr;
                     exprList->push_back(std::move(exe));
+                } else {
+                    // General expression
+                    return nullptr;
                 }
                 // Ensure that elements are separated by a semicolon.
                 if (lexer.getCurToken() != ';' && !isBlock)

@@ -18,7 +18,7 @@
 // This file implements the entry point for the Toy compiler.
 //
 //===----------------------------------------------------------------------===//
-#include <string.h>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #include "toy/Dialect.h"
@@ -50,6 +50,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 using namespace toy;
+using std::unordered_map;
 namespace cl = llvm::cl;
 
 static cl::opt <std::string> inputFilename(cl::Positional,
@@ -111,7 +112,7 @@ std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
 }
 
 int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, 
-            llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
+            unordered_map <uint32_t, std::string> &hashtable) {
     // Handle '.toy' input to the compiler.
     if (inputType != InputType::MLIR &&
         !llvm::StringRef(inputFilename).endswith(".mlir")) {
@@ -140,7 +141,7 @@ int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module,
 
 int loadAndProcessMLIR(mlir::MLIRContext &context,
                        mlir::OwningModuleRef &module, 
-                       llvm::ScopedHashTable <mlir::Value, llvm::StringRef> &hashtable) {
+                       unordered_map <uint32_t, std::string> &hashtable) {
     if (int error = loadMLIR(context, module, hashtable))
         return error;
     mlir::PassManager pm(&context);
@@ -256,8 +257,7 @@ int runJit(mlir::ModuleOp module) {
 int main(int argc, char **argv) {
     mlir::registerPassManagerCLOptions();
     cl::ParseCommandLineOptions(argc, argv, "toy compiler\n");
-    llvm::ScopedHashTable <mlir::Value, llvm::StringRef> ssa_hashtable;
-    llvm::ScopedHashTableScope <mlir::Value, llvm::StringRef> var_scope(ssa_hashtable);
+    unordered_map <uint32_t, std::string> ssa_hashtable;
 
     if (emitAction == Action::DumpAST)
         return dumpAST();
