@@ -117,16 +117,12 @@ static void buildConstOp(mlir::Builder *builder, mlir::OperationState &state,
     ConstOp::build(builder, state, dataType, dataAttribute);
 }
 
-/// Verifier for the const operation. This corresponds to the `::verify(...)`
-/// in the op definition.
 static mlir::LogicalResult verify(ConstOp op) {
-    // If the return type of the const is not an unranked tensor, the shape
-    // must match the shape of the attribute holding the data.
     auto resultType = op.getResult().getType().cast<RankedTensorType>();
     if (!resultType)
         return success();
 
-    // Check that the rank of the attribute type matches the rank of the const
+    // Check that the rank of the attribute type matches the rank of the constant
     // result type.
     auto attrType = op.value().getType().cast<mlir::TensorType>();
     if (attrType.getRank() != resultType.getRank()) {
@@ -147,6 +143,14 @@ static mlir::LogicalResult verify(ConstOp op) {
     }
     return mlir::success();
 }
+
+static void buildBreakOp(mlir::Builder *builder, mlir::OperationState &state,
+                            double value) {
+    auto dataType = RankedTensorType::get({}, builder->getF64Type());
+    auto dataAttribute = DenseElementsAttr::get(dataType, value);
+    BreakOp::build(builder, state, dataType, dataAttribute);
+}
+
 
 static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {

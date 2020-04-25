@@ -62,7 +62,6 @@ namespace {
         uint32_t indent = 0;
         bool is_loop_field = false;
         std::vector <mlir::Value> each_result;
-        std::vector <std::string> each_name;
         std::vector <std::string> while_end;
         std::vector <uint32_t> loop_round;
         std::vector <field> loop_field;
@@ -78,8 +77,6 @@ namespace {
             if (i == len) std::cout << "error occured!\n";
             else std::cout << getString(i) << ")\n";
             each_result.push_back(op.getResult(0));
-            std::string tmp = "tmp" + std::to_string(tmp_num);
-            each_name.push_back(tmp);
             tmp_num++;
         }
 
@@ -90,10 +87,8 @@ namespace {
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             if (i == len) std::cout << "error occured!\n";
-            else std::cout << each_name[i] << ")\n";
+            else std::cout << getString(i) << ")\n";
             each_result.push_back(op.getResult(0));
-            std::string tmp = "tmp" + std::to_string(tmp_num);
-            each_name.push_back(tmp);
             tmp_num++;
         }
 
@@ -112,8 +107,6 @@ namespace {
             } else {
                 std::cout << tmp_expr.str();
                 each_result.push_back(op.getResult(0));
-                std::string tmp = "tmp" + std::to_string(tmp_num);
-                each_name.push_back(tmp);
                 tmp_num++;
             }
         };
@@ -122,7 +115,7 @@ namespace {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            std::string return_var = each_name[i];
+            std::string return_var = getString(i);
             INDENT();
             std::cout << "return run_infer_type(relay.Function(relay.analysis.free_vars("
                       << return_var << ")," << return_var << "))\n";
@@ -132,8 +125,9 @@ namespace {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            std::cout << each_name[i - 1] << "<" << each_name[i];
-            std::cout << ":\n";
+            cout << getString(i);
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            cout << " < " << getString(i) << ")\n";
         }
 
         void If2Relay(mlir::Operation &op) {
@@ -155,7 +149,6 @@ namespace {
         }
 
         void Constant2Relay(mlir::Operation &op) {
-            if (is_loop_field) return ;
             auto constantop = mlir::dyn_cast<mlir::relay::ConstantOp>(&op);
             auto constantValue = constantop.value();
             auto valueIt = constantValue.getValues<double>().begin();
@@ -185,14 +178,43 @@ namespace {
             getDenseElement(result, tmp_para_define, shape_vector, 0, 0, result.size());
             func_para_define.append(tmp_para_define.str().append(";\n"));
             each_result.push_back(oop->getResult(0));
-            std::string tmp = "var" + std::to_string(num);
-            each_name.push_back(tmp);
-            num++;
             tmp_num++;
         }
 
         void Const2Relay(mlir::Operation &op) {
-            auto constop = mlir::dyn_cast<mlir::relay::ConstOp>(&op);
+            auto constantop = mlir::dyn_cast<mlir::relay::ConstOp>(&op);
+            auto constantValue = constantop.value();
+            auto valueIt = constantValue.getValues<double>().begin();
+            mlir::Operation *oop = constantop;
+            auto tensorType = (*oop->result_type_begin()).cast<mlir::TensorType>();
+            auto shape = tensorType.getShape();
+            int32_t dataNum = 1;
+            std::vector <int32_t> shape_vector;
+            INDENT();
+            for (size_t i = 0; i < shape.size(); i++) {
+                if (i != shape.size() - 1) std::cout << shape[i] << ",";
+                else std::cout << shape[i] << "), dtype=\"float64\")\n";
+                dataNum *= shape[i];
+                shape_vector.push_back(shape[i]);
+            }
+            std::stringstream tmp_para_define;
+            tmp_para_define << getString(tmp_num) << std::string(" = ");
+            std::vector<double> data;
+            for (int32_t i = 0; i < dataNum; i++) {
+                data.push_back(*valueIt++);
+            }
+            std::vector <std::string> result;
+            for (int32_t i = 0; i < dataNum; i++) {
+                result.push_back(std::to_string(data[i]));
+            }
+            getDenseElement(result, tmp_para_define, shape_vector, 0, 0, result.size());
+            cout << tmp_para_define.str() << ";\n";
+            each_result.push_back(oop->getResult(0));
+            tmp_num++;
+        }
+
+        void Break2Relay(mlir::Operation &op) {
+            auto constop = mlir::dyn_cast<mlir::relay::BreakOp>(&op);
             auto constValue = constop.value();
             auto valueIt = constValue.getValues<double>().begin();
             double data = *valueIt;
@@ -201,33 +223,33 @@ namespace {
 
         void Print2Relay(mlir::Operation &op) {
             INDENT();
-            std::cout << "f1 = relay.Function([";
-            for (uint32_t i = 0; i < num; i++) {
-                std::cout << "var" << i;
-                if (i != num - 1) std::cout << ",";
-                else std::cout << "],";
-            }
-            size_t len = each_result.size();
-            size_t i;
-            for (i = 0; i < len; i++) {
-                if (each_result[i] == op.getOperand(0)) break;
-            }
-            if (i == len) std::cout << "error occured!\n";
-            else std::cout << each_name[i].c_str() << ")\n";
-            std::cout << "    mod = relay.Module.from_expr(f1)\n"
-                      << "    mod = relay.transform.InferType()(mod)\n"
-                      << "    opt_level = 3\n"
-                      << "    target = tvm.target.cuda()\n"
-                      << "    with relay.build_config(opt_level=opt_level):\n"
-                      << "        graph, lib, params = relay.build_module.build(mod, target)\n"
-                      << "    ctx = tvm.gpu()\n"
-                      << "    module = graph_runtime.create(graph, lib, ctx)\n";
-            for (uint32_t i = 0; i < num; i++) {
-                std::cout << "    module.set_input(\"var" << i << "\",data" << i << ")\n";
-            }
-            std::cout << ("    module.run()\n")
-                      << "    out = module.get_output(0).asnumpy()\n"
-                      << "    print(out)\n";
+            // std::cout << "f1 = relay.Function([";
+            // for (uint32_t i = 0; i < num; i++) {
+            //     std::cout << "var" << i;
+            //     if (i != num - 1) std::cout << ",";
+            //     else std::cout << "],";
+            // }
+            // size_t len = each_result.size();
+            // size_t i;
+            // for (i = 0; i < len; i++) {
+            //     if (each_result[i] == op.getOperand(0)) break;
+            // }
+            // if (i == len) std::cout << "error occured!\n";
+            // else std::cout << each_name[i].c_str() << ")\n";
+            // std::cout << "    mod = relay.Module.from_expr(f1)\n"
+            //           << "    mod = relay.transform.InferType()(mod)\n"
+            //           << "    opt_level = 3\n"
+            //           << "    target = tvm.target.cuda()\n"
+            //           << "    with relay.build_config(opt_level=opt_level):\n"
+            //           << "        graph, lib, params = relay.build_module.build(mod, target)\n"
+            //           << "    ctx = tvm.gpu()\n"
+            //           << "    module = graph_runtime.create(graph, lib, ctx)\n";
+            // for (uint32_t i = 0; i < num; i++) {
+            //     std::cout << "    module.set_input(\"var" << i << "\",data" << i << ")\n";
+            // }
+            // std::cout << ("    module.run()\n")
+            //           << "    out = module.get_output(0).asnumpy()\n"
+            //           << "    print(out)\n";
         }
 
         int getDenseElement(std::vector <std::string> &result, std::stringstream &out, std::vector <int32_t> shape,
@@ -294,11 +316,12 @@ namespace {
                 for (mlir::Operation &op : llvm::make_early_inc_range(block)) {
                     if(!is_loop_field) line ++;
                     std::string op_name = op.getName().getStringRef().str();
-                    //std::cout << op_name << std::endl;
+                    std::cout << "###" << op_name << "###" << std::endl;
                     if (op_name == "relay.constant")
                         Constant2Relay(op);
-                    if (op_name == "relay.const")
+                    else if (op_name == "relay.const"){
                         Const2Relay(op);
+                    }
                     else if (op_name == "relay.reshape")
                         Reshape2Relay(op, "relay.op.reshape");
                     else if (op_name == "relay.softmax")

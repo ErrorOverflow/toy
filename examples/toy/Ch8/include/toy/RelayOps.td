@@ -101,7 +101,7 @@ def ConstOp : Relay_Op<"const", [NoSideEffect]> {
     to the operation as an attribute. For example:
 
     ```mlir
-      %0 = "relay.const"()
+      %0 = "relay.constant"()
          { value = dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]> : tensor<2x3xf64> }
         : () -> tensor<2x3xf64>
     ```
@@ -125,12 +125,44 @@ def ConstOp : Relay_Op<"const", [NoSideEffect]> {
 
     // Build a constant with a given constant floating-point value.
     OpBuilder<"Builder *builder, OperationState &result, double value", [{
-      buildConstantOp(builder, result, value);
+      buildConstOp(builder, result, value);
     }]>
   ];
 
   // Invoke a static verify method to verify this constant operation.
   let verifier = [{ return ::verify(*this); }];
+}
+
+def BreakOp : Relay_Op<"break", [NoSideEffect]> {
+  // Provide a summary and description for this operation. This can be used to
+  // auto-generate documenatation of the operations within our dialect.
+  let summary = "break";
+  let description = [{
+    Constant operation turns a literal into an SSA value. The data is attached
+    to the operation as an attribute. For example:
+
+    ```mlir
+      %0 = "relay.break"()
+         { value = dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]> : tensor<2x3xf64> }
+        : () -> tensor<2x3xf64>
+    ```
+  }];
+
+  // The constant operation takes an attribute as the only input.
+  let arguments = (ins F64ElementsAttr:$value);
+
+  // The constant operation returns a single value of TensorType.
+  let results = (outs F64Tensor);
+
+  // Add custom build methods for the constant operation. These method populates
+  // the `state` that MLIR uses to create operations, i.e. these are used when
+  // using `builder.create<BreakOp>(...)`.
+  let builders = [
+    // Build a constant with a given constant floating-point value.
+    OpBuilder<"Builder *builder, OperationState &result, double value", [{
+      buildBreakOp(builder, result, value);
+    }]>
+  ];
 }
 
 def AddOp : Relay_Op<"add"> {

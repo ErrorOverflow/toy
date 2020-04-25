@@ -109,6 +109,7 @@ namespace {
         uint32_t value_num = 0;
         uint32_t tmp_num = 0;
         uint32_t iteration = 0;
+        bool isConst = false;
 
         void insert_table(StringRef var){
             hashtable.insert(std::pair<uint32_t, std::string>(value_num, var.str()));
@@ -154,8 +155,10 @@ namespace {
         mlir::LogicalResult mlirGen(IfExprAST &ifAST) {
             auto location = loc(ifAST.loc());
             builder.create<IfOp>(location);
+            insert_table();
             mlir::Value v = mlirGen(*ifAST.getValue());
-            builder.create<ConstOp>(location, ifAST.getBodyNum());
+            insert_table();
+            builder.create<BreakOp>(location, ifAST.getBodyNum());
             if (!v)
                 return mlir::failure();
             if (mlir::failed(mlirGen(*ifAST.getBody())))
@@ -167,9 +170,11 @@ namespace {
             auto location = loc(forAST.loc());
             mlirGen(*forAST.getDecl());
             builder.create<ForOp>(location);
+            insert_table();
             mlirGen(*forAST.getValue());
             mlirGen(*forAST.getExpr());
-            builder.create<ConstOp>(location, forAST.getBodyNum());
+            insert_table();
+            builder.create<BreakOp>(location, forAST.getBodyNum());
             //TODO: error?
             if (mlir::failed(mlirGen(*forAST.getBody())))
                 return mlir::failure();
@@ -242,7 +247,6 @@ namespace {
             //    and the result value is returned. If an error occurs we get a nullptr
             //    and propagate.
             //
-            iteration++;
             mlir::Value lhs = mlirGen(*binop.getLHS());
             if (!lhs)
                 return nullptr;
@@ -250,10 +254,6 @@ namespace {
             if (!rhs)
                 return nullptr;
             auto location = loc(binop.loc());
-            if(iteration != 1){
-                insert_table();
-                iteration --;
-            }
             // Derive the operation name from the binary operator. At the moment we only
             // support '+' and '*'.
             switch (binop.getOp()) {
@@ -336,7 +336,7 @@ namespace {
             // tensor literal.
             auto dataAttribute =
                     mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
-            if(iteration == 0)
+            if(iteration == 1 && !isConst)
                 return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
             return builder.create<ConstOp>(loc(lit.loc()), type, dataAttribute);
         }
@@ -441,30 +441,42 @@ namespace {
 
         /// Emit a constant for a single number (FIXME: semantic? broadcast?)
         mlir::Value mlirGen(NumberExprAST &num) {
-            if(iteration == 0)
+            if(iteration == 1 && !isConst)
                 return builder.create<ConstantOp>(loc(num.loc()), num.getValue());
             return builder.create<ConstOp>(loc(num.loc()), num.getValue());
         }
 
-        /// Dispatch codegen for the right expression subclass using RTTI.
+        /// Dispatch codegen for the right expression subclass using RTTI. FIXME:
         mlir::Value mlirGen(ExprAST &expr) {
+            iteration++;
+            mlir::Value r;
             switch (expr.getKind()) {
                 case toy::ExprAST::Expr_BinOp:
-                    return mlirGen(cast<BinaryExprAST>(expr));
+                    r =  mlirGen(cast<BinaryExprAST>(expr)); 
+                    break;
                 case toy::ExprAST::Expr_Var:
+                    iteration --;
                     return mlirGen(cast<VariableExprAST>(expr));
+                    break;
                 case toy::ExprAST::Expr_Literal:
-                    return mlirGen(cast<LiteralExprAST>(expr));
+                    r =  mlirGen(cast<LiteralExprAST>(expr));
+                    break;
                 case toy::ExprAST::Expr_Call:
+                    iteration --;
                     return mlirGen(cast<CallExprAST>(expr));
+                    break;
                 case toy::ExprAST::Expr_Num:
-                    return mlirGen(cast<NumberExprAST>(expr));
+                    r =  mlirGen(cast<NumberExprAST>(expr));
+                    break;
                 default:
                     emitError(loc(expr.loc()))
                             << "MLIR codegen encountered an unhandled expr kind '"
                             << Twine(expr.getKind()) << "'";
                     return nullptr;
             }
+            if(iteration > 1) insert_table();
+            iteration --;
+            return r;
         }
 
         /// Handle a variable declaration, we'll codegen the expression that forms the
@@ -500,12 +512,15 @@ namespace {
 
         mlir::Value mlirGen(ConstExprAST &constdecl) {
             auto init = constdecl.getInitVal();
+            isConst = true;
             if (!init) {
                 emitError(loc(constdecl.loc()),
                           "missing initializer in variable declaration");
+                isConst = false;
                 return nullptr;
             }
             mlir::Value value = mlirGen(*init);
+            isConst = false;
             insert_table(constdecl.getName());
             if (!value)
                 return nullptr;

@@ -181,6 +181,13 @@ static mlir::LogicalResult verify(ConstOp op) {
     return mlir::success();
 }
 
+static void buildBreakOp(mlir::Builder *builder, mlir::OperationState &state,
+                            double value) {
+    auto dataType = RankedTensorType::get({}, builder->getF64Type());
+    auto dataAttribute = DenseElementsAttr::get(dataType, value);
+    BreakOp::build(builder, state, dataType, dataAttribute);
+}
+
 //===----------------------------------------------------------------------===//
 // AddOp
 

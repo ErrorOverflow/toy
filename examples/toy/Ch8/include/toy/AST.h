@@ -44,7 +44,8 @@ namespace toy {
             Expr_IfOp,
             Expr_ForOp,
             Expr_Exe,
-            Expr_Const
+            Expr_Const,
+            Expr_Break
         };
 
         ExprAST(ExprASTKind kind, Location location)

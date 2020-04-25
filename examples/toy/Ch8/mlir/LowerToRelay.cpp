@@ -146,6 +146,19 @@ namespace {
             return matchSuccess();
         }
     };
+
+    struct BreakOpLowering : public OpRewritePattern<toy::BreakOp> {
+        using OpRewritePattern<toy::BreakOp>::OpRewritePattern;
+
+        PatternMatchResult matchAndRewrite(toy::BreakOp op,
+                                           PatternRewriter &rewriter) const final {
+            DenseElementsAttr constValue = op.value();
+            Location loc = op.getLoc();
+            auto constRelay = rewriter.create<relay::BreakOp>(loc, constValue.getType(), constValue);
+            rewriter.replaceOp(op, {constRelay});
+            return matchSuccess();
+        }
+    };
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Return operations
 //===----------------------------------------------------------------------===//
@@ -236,7 +249,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, ConstOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering,
-            IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering,
+            IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering, BreakOpLowering,
             ReshapeOpLowering, TransposeOpLowering, Conv1dOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the
