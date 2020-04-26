@@ -67,6 +67,7 @@ namespace {
         std::vector <field> loop_field;
         std::string func_para_define;
         unordered_map <uint32_t, std::string> &hashtable;
+        //unordered_map <uint32_t, std::string> const_table;
 
         void Unary2Relay(mlir::Operation &op, std::string convert_name) {
             INDENT();
@@ -125,9 +126,9 @@ namespace {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            cout << getString(i);
+            cout << "(" << getString(i);
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            cout << " < " << getString(i) << ")\n";
+            cout << " < " << getString(i) << "):\n";
         }
 
         void If2Relay(mlir::Operation &op) {
@@ -192,8 +193,6 @@ namespace {
             std::vector <int32_t> shape_vector;
             INDENT();
             for (size_t i = 0; i < shape.size(); i++) {
-                if (i != shape.size() - 1) std::cout << shape[i] << ",";
-                else std::cout << shape[i] << "), dtype=\"float64\")\n";
                 dataNum *= shape[i];
                 shape_vector.push_back(shape[i]);
             }
@@ -219,6 +218,8 @@ namespace {
             auto valueIt = constValue.getValues<double>().begin();
             double data = *valueIt;
             loop_field.back().high = line + (int)data;
+            is_loop_field = false;
+            indent++;
         }
 
         void Print2Relay(mlir::Operation &op) {
@@ -294,6 +295,16 @@ namespace {
             std::cout << "):\n";
         }
 
+        void dumpWhileEnd(){
+            while (!loop_field.empty() && line == loop_field.back().high){
+                INDENT();
+                cout << while_end.back();
+                while_end.pop_back();
+                loop_field.pop_back();
+                indent--;
+            }
+        }
+
         void INDENT() {
             for(uint32_t i = 0; i<indent; i++){
                 std::cout << "    ";
@@ -319,9 +330,8 @@ namespace {
                     std::cout << "###" << op_name << "###" << std::endl;
                     if (op_name == "relay.constant")
                         Constant2Relay(op);
-                    else if (op_name == "relay.const"){
+                    else if (op_name == "relay.const")
                         Const2Relay(op);
-                    }
                     else if (op_name == "relay.reshape")
                         Reshape2Relay(op, "relay.op.reshape");
                     else if (op_name == "relay.softmax")
@@ -344,15 +354,11 @@ namespace {
                         Binary2Relay(op, "relay.nn.dense");
                     else if (op_name == "relay.bias_add")
                         Binary2Relay(op, "relay.nn.bias_add");
-                    if (!loop_field.empty() && line == loop_field.back().high){
-                        if(loop_field.back().id == "for"){
-                            INDENT();
-                            //std::cout << while_end.back();
-                            //while_end.pop_back();
-                        }
-                        loop_field.pop_back();
-                        indent--;
-                    }
+                    else if (op_name == "relay.bltz")
+                        Bltz2Relay(op);
+                    else if (op_name == "relay.break")
+                        Break2Relay(op);
+                    dumpWhileEnd();
                 }
             }
             std::cout << "if __name__ == \"__main__\":\n";

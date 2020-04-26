@@ -207,6 +207,12 @@ namespace toy {
             auto loc = lexer.getLastLocation();
             lexer.getNextToken(); // eat identifier.
 
+            if (lexer.getCurToken() == '['){
+                auto index = parseExpression();
+                lexer.consume(Token(']'));
+                return std::make_unique<IndexExprAST>(std::move(loc), name, std::move(index));
+            }
+
             if (lexer.getCurToken() != '(') // Simple variable ref.
                 return std::make_unique<VariableExprAST>(std::move(loc), name);
 

@@ -45,7 +45,8 @@ namespace toy {
             Expr_ForOp,
             Expr_Exe,
             Expr_Const,
-            Expr_Break
+            Expr_Break,
+            Expr_Index
         };
 
         ExprAST(ExprASTKind kind, Location location)
@@ -245,6 +246,23 @@ namespace toy {
 
         /// LLVM style RTTI
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_Print; }
+    };
+
+/// Expression class for builtin print calls.
+    class IndexExprAST : public ExprAST {
+        std::string list;
+        std::unique_ptr <ExprAST> index;
+
+    public:
+        IndexExprAST(Location loc, std::string list, uint32_t index)
+                : ExprAST(Expr_Index, loc), list(list), index(std::move(index)) {}
+
+        llvm::StringRef getList() { return list; }
+
+        ExprAST *getIndex() { return index.get(); }
+
+        /// LLVM style RTTI
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_Index; }
     };
 
 /// Expression class for a if operator.

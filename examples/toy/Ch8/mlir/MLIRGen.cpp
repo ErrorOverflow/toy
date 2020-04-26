@@ -439,6 +439,14 @@ namespace {
             return mlir::success();
         }
 
+        mlir::Value mlirGen(IndexExprAST &call) {
+            auto arg = mlirGen(*call.getArg());
+            if (!arg)
+                return mlir::failure();
+
+            return builder.create<PrintOp>(loc(call.loc()), arg);
+        }
+
         /// Emit a constant for a single number (FIXME: semantic? broadcast?)
         mlir::Value mlirGen(NumberExprAST &num) {
             if(iteration == 1 && !isConst)
@@ -464,6 +472,9 @@ namespace {
                 case toy::ExprAST::Expr_Call:
                     iteration --;
                     return mlirGen(cast<CallExprAST>(expr));
+                    break;
+                case toy::ExprAST::Expr_Index:
+                    return mlirGen(cast<IndexExprAST>(expr));
                     break;
                 case toy::ExprAST::Expr_Num:
                     r =  mlirGen(cast<NumberExprAST>(expr));
@@ -498,11 +509,11 @@ namespace {
             // We have the initializer value, but in case the variable was declared
             // with specific shape, we emit a "reshape" operation. It will get
             // optimized out later as needed.
-            if (!vardecl.getType().shape.empty()) {
-                value = builder.create<ReshapeOp>
-                        (loc(vardecl.loc()), getType(vardecl.getType()), value);
-                insert_table(vardecl.getName());
-            }
+            // if (!vardecl.getType().shape.empty()) {
+            //     value = builder.create<ReshapeOp>
+            //             (loc(vardecl.loc()), getType(vardecl.getType()), value);
+            //     insert_table(vardecl.getName());
+            // }
 
             // Register the value in the symbol table.
             if (failed(declare(vardecl.getName(), value)))
