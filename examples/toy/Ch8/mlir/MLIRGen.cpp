@@ -53,6 +53,7 @@ using llvm::SmallVector;
 using llvm::StringRef;
 using llvm::Twine;
 using std::unordered_map;
+using std::cout;
 
 namespace {
 
@@ -158,11 +159,12 @@ namespace {
             insert_table();
             mlir::Value v = mlirGen(*ifAST.getValue());
             insert_table();
-            builder.create<BreakOp>(location, ifAST.getBodyNum());
+            builder.create<LoopFieldOp>(location);
             if (!v)
                 return mlir::failure();
             if (mlir::failed(mlirGen(*ifAST.getBody())))
                 return mlir::failure();
+            builder.create<LoopEndOp>(location);
             return mlir::success();
         }
 
@@ -174,10 +176,11 @@ namespace {
             mlirGen(*forAST.getValue());
             mlirGen(*forAST.getExpr());
             insert_table();
-            builder.create<BreakOp>(location, forAST.getBodyNum());
+            builder.create<LoopFieldOp>(location);
             //TODO: error?
             if (mlir::failed(mlirGen(*forAST.getBody())))
                 return mlir::failure();
+            builder.create<LoopEndOp>(location);
             return mlir::success();
         }
 
@@ -439,12 +442,11 @@ namespace {
             return mlir::success();
         }
 
-        mlir::Value mlirGen(IndexExprAST &call) {
-            auto arg = mlirGen(*call.getArg());
-            if (!arg)
-                return mlir::failure();
-
-            return builder.create<PrintOp>(loc(call.loc()), arg);
+        mlir::Value mlirGen(IndexExprAST &op) {
+            auto name = op.getName();
+            mlir::Value index =  mlirGen(*op.getIndex());
+            mlir::Value r = builder.create<IndexOp>(loc(op.loc()), name, index);
+            return r;
         }
 
         /// Emit a constant for a single number (FIXME: semantic? broadcast?)
@@ -474,7 +476,7 @@ namespace {
                     return mlirGen(cast<CallExprAST>(expr));
                     break;
                 case toy::ExprAST::Expr_Index:
-                    return mlirGen(cast<IndexExprAST>(expr));
+                    r =  mlirGen(cast<IndexExprAST>(expr));
                     break;
                 case toy::ExprAST::Expr_Num:
                     r =  mlirGen(cast<NumberExprAST>(expr));
@@ -531,8 +533,8 @@ namespace {
                 return nullptr;
             }
             mlir::Value value = mlirGen(*init);
-            isConst = false;
             insert_table(constdecl.getName());
+            isConst = false;
             if (!value)
                 return nullptr;
 

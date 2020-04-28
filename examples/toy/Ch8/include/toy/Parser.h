@@ -206,8 +206,8 @@ namespace toy {
             std::string name(lexer.getId());
             auto loc = lexer.getLastLocation();
             lexer.getNextToken(); // eat identifier.
-
             if (lexer.getCurToken() == '['){
+                lexer.consume(Token('['));
                 auto index = parseExpression();
                 lexer.consume(Token(']'));
                 return std::make_unique<IndexExprAST>(std::move(loc), name, std::move(index));
@@ -406,7 +406,6 @@ namespace toy {
             lexer.getNextToken();
             lexer.consume(Token('='));
             auto rhs = parseExpression();
-            //std::cout << 233 << std::endl;
             return std::make_unique<ExeExprAST>(std::move(loc), std::move(lhs), std::move(rhs));
         }
 

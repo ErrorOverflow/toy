@@ -63,11 +63,9 @@ namespace {
 
     template<typename BinaryOp, typename LoweredBinaryOp>
     struct BinaryOpLowering : public ConversionPattern {
-        BinaryOpLowering(MLIRContext *ctx)
-                : ConversionPattern(BinaryOp::getOperationName(), 1, ctx) {}
+        BinaryOpLowering(MLIRContext *ctx) : ConversionPattern(BinaryOp::getOperationName(), 1, ctx) {}
 
-        PatternMatchResult
-        matchAndRewrite(Operation *op, ArrayRef <Value> operands,
+        PatternMatchResult matchAndRewrite(Operation *op, ArrayRef <Value> operands,
                         ConversionPatternRewriter &rewriter) const final {
             auto loc = op->getLoc();
             auto type = op->getResult(0).getType();
@@ -79,11 +77,9 @@ namespace {
 
     template<typename Op, typename LoweredOp>
     struct ZeroOpLowering : public ConversionPattern {
-        ZeroOpLowering(MLIRContext *ctx)
-                : ConversionPattern(Op::getOperationName(), 1, ctx) {}
+        ZeroOpLowering(MLIRContext *ctx) : ConversionPattern(Op::getOperationName(), 1, ctx) {}
 
-        PatternMatchResult
-        matchAndRewrite(Operation *op, ArrayRef <Value> operands,
+        PatternMatchResult matchAndRewrite(Operation *op, ArrayRef <Value> operands,
                         ConversionPatternRewriter &rewriter) const final {
             rewriter.replaceOpWithNewOp<LoweredOp>(op);
             return matchSuccess();
@@ -113,6 +109,8 @@ namespace {
     using Conv1dOpLowering = BinaryOpLowering<toy::Conv1dOp, relay::Conv1dOp>;
     using IfOpLowering = ZeroOpLowering<toy::IfOp, relay::IfOp>;
     using ForOpLowering = ZeroOpLowering<toy::ForOp, relay::ForOp>;
+    using LoopFieldOpLowering = ZeroOpLowering<toy::LoopFieldOp, relay::LoopFieldOp>;
+    using LoopEndOpLowering = ZeroOpLowering<toy::LoopEndOp, relay::LoopEndOp>;
     using TransposeOpLowering = UnaryOpLowering<toy::TransposeOp, relay::TransposeOp>;
     using SoftmaxOpLowering = UnaryOpLowering<toy::SoftmaxOp, relay::SoftmaxOp>;
     using ReshapeOpLowering = UnaryOpLowering<toy::ReshapeOp, relay::ReshapeOp>;
@@ -147,18 +145,20 @@ namespace {
         }
     };
 
-    struct BreakOpLowering : public OpRewritePattern<toy::BreakOp> {
-        using OpRewritePattern<toy::BreakOp>::OpRewritePattern;
+    struct IndexOpLowering : public OpRewritePattern<toy::IndexOp> {
+        using OpRewritePattern<toy::IndexOp>::OpRewritePattern;
 
-        PatternMatchResult matchAndRewrite(toy::BreakOp op,
+        PatternMatchResult matchAndRewrite(toy::IndexOp op,
                                            PatternRewriter &rewriter) const final {
-            DenseElementsAttr constValue = op.value();
+            auto index = op.index();
+            auto name = op.name();
             Location loc = op.getLoc();
-            auto constRelay = rewriter.create<relay::BreakOp>(loc, constValue.getType(), constValue);
-            rewriter.replaceOp(op, {constRelay});
+            auto indexRelay = rewriter.create<relay::IndexOp>(loc, index.getType(), name, index);
+            rewriter.replaceOp(op, {indexRelay});
             return matchSuccess();
         }
     };
+
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Return operations
 //===----------------------------------------------------------------------===//
@@ -214,13 +214,6 @@ namespace {
 } // end anonymous namespace.
 
 void ToyToRelayLoweringPass::runOnFunction() {
-    auto function = getFunction();
-
-    // We only lower the main function as we expect that all other functions have
-    // been inlined.
-    if (function.getName() != "main")
-        return;
-
     // Verify that the given main has no inputs and results.
     // if (function.getNumArguments() || function.getType().getNumResults()) {
     //   function.emitError("expected 'main' to have 0 inputs and 0 results");
@@ -248,8 +241,9 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, ConstOpLowering,
-            SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering,
-            IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering, BreakOpLowering,
+            SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering, 
+            IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
+            IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering, 
             ReshapeOpLowering, TransposeOpLowering, Conv1dOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the

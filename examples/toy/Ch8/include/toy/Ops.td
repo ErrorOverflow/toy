@@ -133,39 +133,12 @@ def ConstOp : Toy_Op<"const", [NoSideEffect]> {
   let verifier = [{ return ::verify(*this); }];
 }
 
-def BreakOp : Toy_Op<"break", [NoSideEffect]> {
-  // Provide a summary and description for this operation. This can be used to
-  // auto-generate documenatation of the operations within our dialect.
-  let summary = "break";
-  let description = [{
-    Const operation turns a literal into an SSA value. The data is attached
-    to the operation as an attribute. For example:
+def LoopFieldOp : Toy_Op<"loop_field", [NoSideEffect]> {
+  let summary = "loop_field";
+}
 
-    ```mlir
-      %0 = "toy.break"()
-         { value = dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]> : tensor<2x3xf64> }
-        : () -> tensor<2x3xf64>
-    ```
-  }];
-
-  // The break operation takes an attribute as the only input.
-  let arguments = (ins F64ElementsAttr:$value);
-
-  // The break operation returns a single value of TensorType.
-  let results = (outs F64Tensor);
-
-  let builders = [
-    // Build a break with a given break tensor value.
-    OpBuilder<"Builder *builder, OperationState &result, "
-              "DenseElementsAttr value", [{
-      build(builder, result, value.getType(), value);
-    }]>,
-
-    // Build a const with a given const floating-point value.
-    OpBuilder<"Builder *builder, OperationState &result, double value", [{
-      buildBreakOp(builder, result, value);
-    }]>
-  ];
+def LoopEndOp : Toy_Op<"loop_end", [NoSideEffect]> {
+  let summary = "loop_end";
 }
 
 
@@ -238,6 +211,19 @@ def GenericCallOp : Toy_Op<"generic_call",
     OpBuilder<"Builder *builder, OperationState &result, "
               "StringRef callee, ArrayRef<Value> arguments", [{
       buildGenericCallOp(builder, result, callee, arguments);
+    }]>
+  ];
+}
+
+def IndexOp : Toy_Op<"index", [NoSideEffect]> {
+
+  let arguments = (ins StrAttr:$name, F64Tensor:$index);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, "
+              "StringRef name, Value index", [{
+      buildIndexOp(b, result, name, index);
     }]>
   ];
 }
@@ -457,27 +443,5 @@ def ForOp : Toy_Op<"for", [NoSideEffect]>{
         The "for" branch is envolved with two tensor and one operation.
     }];
 }
-
-def YieldOp : Toy_Op<"yield", [Terminator]> {
-  let summary = "loop yield and termination operation";
-  let description = [{
-    "loop.yield" yields an SSA value from a loop dialect op region and
-    terminates the regions. The semantics of how the values are yielded
-    is defined by the parent operation. 
-    If "loop.yield" has any operands, the operands must match the parent
-    operation's results. 
-    If the parent operation defines no values, then the "loop.yield" may be 
-    left out in the custom syntax and the builders will insert one implicitly.
-    Otherwise, it has to be present in the syntax to indicate which values
-    are yielded. 
-  }];
-
-  let arguments = (ins Variadic<AnyType>:$results);
-  let builders = [
-    OpBuilder<"Builder *builder, OperationState &result", [{ /* nothing to do */ }]>
-  ];
-}
-
-
 
 #endif // TOY_OPS

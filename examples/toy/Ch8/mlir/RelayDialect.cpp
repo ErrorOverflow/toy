@@ -144,14 +144,6 @@ static mlir::LogicalResult verify(ConstOp op) {
     return mlir::success();
 }
 
-static void buildBreakOp(mlir::Builder *builder, mlir::OperationState &state,
-                            double value) {
-    auto dataType = RankedTensorType::get({}, builder->getF64Type());
-    auto dataAttribute = DenseElementsAttr::get(dataType, value);
-    BreakOp::build(builder, state, dataType, dataAttribute);
-}
-
-
 static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
@@ -277,6 +269,12 @@ static mlir::LogicalResult verify(PrintOp op) {
     return mlir::success();
 }
 
+static void buildIndexOp(mlir::Builder *builder, mlir::OperationState &state,
+                       StringRef name, mlir::Value index) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands(index);
+    state.addAttribute("name", builder->getStringAttr(name));
+}
 //===----------------------------------------------------------------------===//
 // TableGen'd op method definitions
 //===----------------------------------------------------------------------===//

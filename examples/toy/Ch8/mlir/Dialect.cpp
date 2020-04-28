@@ -181,13 +181,6 @@ static mlir::LogicalResult verify(ConstOp op) {
     return mlir::success();
 }
 
-static void buildBreakOp(mlir::Builder *builder, mlir::OperationState &state,
-                            double value) {
-    auto dataType = RankedTensorType::get({}, builder->getF64Type());
-    auto dataAttribute = DenseElementsAttr::get(dataType, value);
-    BreakOp::build(builder, state, dataType, dataAttribute);
-}
-
 //===----------------------------------------------------------------------===//
 // AddOp
 
@@ -219,6 +212,13 @@ CallInterfaceCallable GenericCallOp::getCallableForCallee() {
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
 Operation::operand_range GenericCallOp::getArgOperands() { return inputs(); }
+
+static void buildIndexOp(mlir::Builder *builder, mlir::OperationState &state,
+                       StringRef name, mlir::Value index) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands(index);
+    state.addAttribute("name", builder->getStringAttr(name));
+}
 
 //===----------------------------------------------------------------------===//
 // MulOp

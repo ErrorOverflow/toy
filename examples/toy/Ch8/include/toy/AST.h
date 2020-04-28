@@ -250,14 +250,14 @@ namespace toy {
 
 /// Expression class for builtin print calls.
     class IndexExprAST : public ExprAST {
-        std::string list;
+        std::string name;
         std::unique_ptr <ExprAST> index;
 
     public:
-        IndexExprAST(Location loc, std::string list, uint32_t index)
-                : ExprAST(Expr_Index, loc), list(list), index(std::move(index)) {}
+        IndexExprAST(Location loc, std::string &name, std::unique_ptr <ExprAST> index)
+                : ExprAST(Expr_Index, loc), name(name), index(std::move(index)) {}
 
-        llvm::StringRef getList() { return list; }
+        llvm::StringRef getName() { return name; }
 
         ExprAST *getIndex() { return index.get(); }
 
