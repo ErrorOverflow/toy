@@ -51,14 +51,16 @@ namespace {
     class RelayAPIPass : public mlir::FunctionPass<RelayAPIPass> {
     private:
         uint32_t num = 0;
-        uint32_t tmp_num = 0;
+        uint32_t tmp_num;
         uint32_t loop_flag = 0;
         uint32_t indent = 0;
         bool is_loop_field = false;
+        std::string func_name;
         std::vector <mlir::Value> each_result;
         std::vector <std::string> while_end;
         std::vector <uint32_t> loop_round;
         std::string func_para_define;
+        uint32_t *counter;
         unordered_map <uint32_t, std::string> &hashtable;
         //unordered_map <uint32_t, std::string> const_table;
 
@@ -69,7 +71,7 @@ namespace {
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             if (i == len) std::cout << "error occured!\n";
-            else std::cout << getString(i) << ")\n";
+            else std::cout << getString(i + *counter) <<")\n";
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -81,7 +83,7 @@ namespace {
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             if (i == len) std::cout << "error occured!\n";
-            else std::cout << getString(i) << ")\n";
+            else std::cout << getString(i + *counter) << ")\n";
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -92,9 +94,9 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << getString(i);
+            tmp_expr << getString(i + *counter);
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << ", " << getString(i) << ")\n";
+            tmp_expr << ", " << getString(i + *counter) << ")\n";
             each_result.push_back(op.getResult(0));
             tmp_num++;
             if (is_loop_field) {
@@ -105,23 +107,39 @@ namespace {
             }
         };
 
+        void Call2Relay(mlir::Operation &op){
+            size_t p;
+            size_t len = each_result.size();
+            INDENT();
+            cout << getString(tmp_num) << " = (";
+            for(uint32_t i = 0; i < op.getNumOperands(); i++){
+                for (p = 0; p < len; p++) if (each_result[p] == op.getOperand(i)) break;
+                cout << getString(p + *counter);
+                if(i != op.getNumOperands()-1)
+                    cout << ",";
+            }
+            cout << ");\n";
+        }
+
         void Return2Relay(mlir::Operation &op) {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            std::string return_var = getString(i);
+            std::string return_var = getString(i + *counter);
             INDENT();
-            std::cout << "return run_infer_type(relay.Function(relay.analysis.free_vars("
-                      << return_var << ")," << return_var << "))\n";
+            if(func_name == string("main"))
+                std::cout << "return run_infer_type(relay.Function(relay.analysis.free_vars("
+                        << return_var << ")," << return_var << "))\n";
+            else cout << "return(" << return_var << ")\n";
         }
 
         void Bltz2Relay(mlir::Operation &op) {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            cout << "(" << getString(i);
+            cout << "(" << getString(i + *counter);
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            cout << " < " << getString(i) << "):\n";
+            cout << " < " << getString(i + *counter) << "):\n";
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -224,7 +242,7 @@ namespace {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;            
-            cout << name.str() << "[" << getString(i) << "]\n";
+            cout << name.str() << "[" << getString(i + *counter) << "];\n";
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -254,11 +272,17 @@ namespace {
             return 0;
         }
 
-        void NetBuild(string origin_name) {
+        void FuncBuild() {
             string s = string("func_");
-            s += origin_name;
+            s += func_name;
             std::cout << "def ";
-            std::cout << s << "():\n";
+            std::cout << s << "(";
+            auto configs = getFunction().getArguments();
+            for(auto arg : configs){
+                each_result.push_back(arg);
+                cout << getString(tmp_num++);
+            }
+            cout << "):\n";
         }
 
         void dumpWhileEnd(){
@@ -274,17 +298,23 @@ namespace {
         }
 
         std::string getString(uint32_t n){
-            return hashtable.find(n)->second;
+            return (hashtable.find(n)->second);
         }
 
     public:
-        RelayAPIPass(unordered_map <uint32_t, std::string> &hashtable) : hashtable(hashtable){}
+        RelayAPIPass(unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter)
+                 : hashtable(hashtable), counter(counter){}
         void runOnFunction() override {
             indent = 1;
-            for(auto i : hashtable){
-                 cout << i.first << " " << i.second << endl;
-            }
-            NetBuild(getFunction().getName().str());
+            tmp_num = *counter;
+            each_result.clear();
+            func_name = getFunction().getName().str();
+            //cout << tmp_num << endl;
+            if(getFunction().getName() == "main")
+                for(auto i : hashtable){
+                    cout << i.first << " " << i.second << endl;
+                }
+            FuncBuild();
             for (mlir::Block &block : getFunction()) {
                 for (mlir::Operation &op : llvm::make_early_inc_range(block)) {
                     std::string op_name = op.getName().getStringRef().str();
@@ -323,6 +353,8 @@ namespace {
                         LoopEnd2Relay(op);
                     else if (op_name == "relay.index")
                         Index2Relay(op);
+                    else if (op_name == "toy.generic_call")
+                        Call2Relay(op);
                 }
             }
             if(getFunction().getName() == "main"){
@@ -339,14 +371,18 @@ namespace {
                 std::cout << std::endl;
             }
             cout << endl;
+            *counter=tmp_num;
         }
     };
 }
 
-std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(unordered_map <uint32_t, std::string> &hashtable) {
+std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(
+            unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter) {
     cout << "from tvm import relay\n"
-            << "import tvm\nimport numpy as np\n"
+            << "import tvm\n" 
+            << "import numpy as np\n"
+            << "from . import layers\n"
             << "from tvm.contrib import graph_runtime\n";    
-    return std::make_unique<RelayAPIPass>(hashtable);
+    return std::make_unique<RelayAPIPass>(hashtable, counter);
 }
 

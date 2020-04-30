@@ -182,7 +182,9 @@ int loadAndProcessMLIR(mlir::MLIRContext &context,
 
     if (isLoweringToIR) {
         // Finish lowering the toy IR to the relay.
-        pm.addPass(mlir::relay::createRelayAPIPass(hashtable));
+        uint32_t tmp = 0;
+        uint32_t *counter = &tmp;
+        pm.addPass(mlir::relay::createRelayAPIPass(hashtable, counter));
     }
 
     if (mlir::failed(pm.run(*module)))

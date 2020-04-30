@@ -89,6 +89,8 @@ namespace {
                 return nullptr;
             }
 
+            assert(this->iteration == 0);
+
             return theModule;
         }
 
@@ -156,7 +158,6 @@ namespace {
         mlir::LogicalResult mlirGen(IfExprAST &ifAST) {
             auto location = loc(ifAST.loc());
             builder.create<IfOp>(location);
-            insert_table();
             mlir::Value v = mlirGen(*ifAST.getValue());
             insert_table();
             builder.create<LoopFieldOp>(location);
@@ -172,10 +173,9 @@ namespace {
             auto location = loc(forAST.loc());
             mlirGen(*forAST.getDecl());
             builder.create<ForOp>(location);
-            insert_table();
             mlirGen(*forAST.getValue());
-            mlirGen(*forAST.getExpr());
             insert_table();
+            mlirGen(*forAST.getExpr());
             builder.create<LoopFieldOp>(location);
             //TODO: error?
             if (mlir::failed(mlirGen(*forAST.getBody())))
@@ -203,8 +203,9 @@ namespace {
             // Declare all the function arguments in the symbol table.
             for (const auto &name_value :
                     llvm::zip(protoArgs, entryBlock.getArguments())) {
-                if (failed(declare(std::get<0>(name_value)->getName(),
-                                   std::get<1>(name_value))))
+                llvm::StringRef name_value_name =  std::get<0>(name_value)->getName();
+                insert_table(name_value_name);
+                if (failed(declare(name_value_name, std::get<1>(name_value))))
                     return nullptr;
             }
 
