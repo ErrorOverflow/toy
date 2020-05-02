@@ -342,6 +342,31 @@ namespace {
                     mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
             if(iteration == 1 && !isConst)
                 return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
+            std::string data_struct = "list";
+            return builder.create<ConstOp>(loc(lit.loc()), type, dataAttribute);
+        }
+
+        mlir::Value mlirGen(TupleExprAST &lit) {
+            auto type = getType(lit.getDims());
+
+            // The attribute is a vector with a floating point value per element
+            // (number) in the array, see `collectData()` below for more details.
+            std::vector<double> data;
+            data.reserve(std::accumulate(lit.getDims().begin(), lit.getDims().end(), 1,
+                                         std::multiplies<int>()));
+            collectData(lit, data);
+
+            // The type of this attribute is tensor of 64-bit floating-point with the
+            // shape of the literal.
+            mlir::Type elementType = builder.getF64Type();
+            auto dataType = mlir::RankedTensorType::get(lit.getDims(), elementType);
+
+            // This is the actual attribute that holds the list of values for this
+            // tensor literal.
+            auto dataAttribute =
+                    mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
+
+            std::string data_struct = "tuple";
             return builder.create<ConstOp>(loc(lit.loc()), type, dataAttribute);
         }
 
@@ -454,6 +479,7 @@ namespace {
         mlir::Value mlirGen(NumberExprAST &num) {
             if(iteration == 1 && !isConst)
                 return builder.create<ConstantOp>(loc(num.loc()), num.getValue());
+            std::string data_struct = "number";
             return builder.create<ConstOp>(loc(num.loc()), num.getValue());
         }
 

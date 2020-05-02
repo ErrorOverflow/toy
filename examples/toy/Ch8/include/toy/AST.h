@@ -45,6 +45,7 @@ namespace toy {
             Expr_ForOp,
             Expr_Exe,
             Expr_Const,
+            Expr_Tuple,
             Expr_Break,
             Expr_Index
         };
@@ -156,6 +157,23 @@ namespace toy {
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_Const; }
     };
 
+    class TupleExprAST : public ExprAST {
+        std::vector <std::unique_ptr<ExprAST>> values;
+        std::vector <int64_t> dims;
+
+    public:
+        TupleExprAST(Location loc, std::vector <std::unique_ptr<ExprAST>> values,
+                       std::vector <int64_t> dims)
+                : ExprAST(Expr_Tuple, loc), values(std::move(values)),
+                  dims(std::move(dims)) {}
+
+        llvm::ArrayRef <std::unique_ptr<ExprAST>> getValues() { return values; }
+
+        llvm::ArrayRef <int64_t> getDims() { return dims; }
+
+        /// LLVM style RTTI
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_Tuple; }
+    };    
 
 /// Expression class for execution.
     class ExeExprAST : public ExprAST {

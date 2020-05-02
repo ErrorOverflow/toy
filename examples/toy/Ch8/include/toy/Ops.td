@@ -128,9 +128,6 @@ def ConstOp : Toy_Op<"const", [NoSideEffect]> {
       buildConstOp(builder, result, value);
     }]>
   ];
-
-  // Invoke a static verify method to verify this const operation.
-  let verifier = [{ return ::verify(*this); }];
 }
 
 def LoopFieldOp : Toy_Op<"loop_field", [NoSideEffect]> {

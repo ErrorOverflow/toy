@@ -59,7 +59,7 @@ namespace toy {
 
     private:
         Lexer &lexer;
-
+        bool isConst = false;
         /// Parse a if block.
         /// if := ([primary { < | > } primary]) block ;
         std::unique_ptr <IfExprAST> parseIf() {
@@ -186,6 +186,36 @@ namespace toy {
                                                     std::move(dims));
         }
 
+       std::unique_ptr <ExprAST> parseTupleExpr() {
+            auto loc = lexer.getLastLocation();
+            lexer.consume(Token('('));
+
+            std::vector <std::unique_ptr<ExprAST>> values;
+            std::vector <int64_t> dims;
+            do {
+                if (lexer.getCurToken() != tok_number)
+                    return parseError<ExprAST>("<num> or [", "in tuple expression");
+                values.push_back(parseNumberExpr());
+
+                if (lexer.getCurToken() == ')')
+                    break;
+
+                if (lexer.getCurToken() != ',')
+                    return parseError<ExprAST>("] or ,", "in tuple expression");
+
+                lexer.getNextToken(); 
+            } while (true);
+
+            if (values.empty())
+                return parseError<ExprAST>("<something>", "to fill tuple expression");
+            lexer.getNextToken(); 
+
+            dims.push_back(values.size());
+
+            return std::make_unique<TupleExprAST>(std::move(loc), std::move(values),
+                                                    std::move(dims));
+        }
+
         /// parenexpr ::= '(' expression ')'
         std::unique_ptr <ExprAST> parseParenExpr() {
             lexer.getNextToken(); // eat (.
@@ -264,6 +294,8 @@ namespace toy {
                 case tok_number:
                     return parseNumberExpr();
                 case '(':
+                    if(isConst)
+                        return parseTupleExpr();
                     return parseParenExpr();
                 case '[':
                     return parseTensorLiteralExpr();
@@ -391,7 +423,9 @@ namespace toy {
             std::unique_ptr <VarType> type = std::make_unique<VarType>();
 
             lexer.consume(Token('='));
+            this->isConst = true;
             auto expr = parseExpression();
+            this->isConst = false;
             return std::make_unique<ConstExprAST>(std::move(loc), std::move(id),
                                                     std::move(*type), std::move(expr));
         }

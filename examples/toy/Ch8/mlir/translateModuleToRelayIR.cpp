@@ -37,6 +37,7 @@
 
 #include "toy/RelayIR.h"
 #include "toy/RelayDialect.h"
+#include "toy/Dialect.h"
 
 using std::unordered_map;
 using std::string;
@@ -59,19 +60,28 @@ namespace {
         std::vector <mlir::Value> each_result;
         std::vector <std::string> while_end;
         std::vector <uint32_t> loop_round;
-        std::string func_para_define;
-        uint32_t *counter;
+        std::string func_para_define; 
         unordered_map <uint32_t, std::string> &hashtable;
-        //unordered_map <uint32_t, std::string> const_table;
+        uint32_t *counter;
 
-        void Unary2Relay(mlir::Operation &op, std::string convert_name) {
-            INDENT();
-            std::cout << getString(tmp_num) << " = " << convert_name << "(";
+        void Op2Realy(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
             size_t len = each_result.size();
-            size_t i;
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            if (i == len) std::cout << "error occured!\n";
-            else std::cout << getString(i + *counter) <<")\n";
+            size_t p;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            for(uint32_t i = 0; i < op.getNumOperands(); i++){
+                for (p = 0; p < len; p++) if (each_result[p] == op.getOperand(i)) break;
+                tmp_expr << getString(p + *counter);
+                if(i != op.getNumOperands()-1)
+                    tmp_expr << ", ";
+            }
+            tmp_expr << ");\n";
+            if (is_loop_field)
+                while_end.push_back(tmp_expr.str());
+            else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -110,8 +120,9 @@ namespace {
         void Call2Relay(mlir::Operation &op){
             size_t p;
             size_t len = each_result.size();
+            auto call_op = mlir::dyn_cast<mlir::toy::GenericCallOp>(&op);
             INDENT();
-            cout << getString(tmp_num) << " = (";
+            cout << getString(tmp_num) << " = func_" << call_op.callee().getRootReference().str() <<"(";
             for(uint32_t i = 0; i < op.getNumOperands(); i++){
                 for (p = 0; p < len; p++) if (each_result[p] == op.getOperand(i)) break;
                 cout << getString(p + *counter);
@@ -119,6 +130,8 @@ namespace {
                     cout << ",";
             }
             cout << ");\n";
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
         }
 
         void Return2Relay(mlir::Operation &op) {
@@ -326,9 +339,7 @@ namespace {
                     else if (op_name == "relay.reshape")
                         Reshape2Relay(op, "relay.op.reshape");
                     else if (op_name == "relay.softmax")
-                        Unary2Relay(op, "relay.nn.softmax");
-                    else if (op_name == "relay.reshape")
-                        Unary2Relay(op, "np.reshape");
+                        Op2Realy(op, "relay.nn.softmax");
                     else if (op_name == "toy.return")
                         Return2Relay(op);
                     else if (op_name == "relay.if")
@@ -340,11 +351,11 @@ namespace {
                     else if (op_name == "relay.mul")
                         Binary2Relay(op, "relay.op.multiply");
                     else if (op_name == "relay.conv1d")
-                        Binary2Relay(op, "relay.nn.conv1d");
+                        Op2Realy(op, "relay.nn.conv1d");
                     else if (op_name == "relay.dense")
-                        Binary2Relay(op, "relay.nn.dense");
+                        Op2Realy(op, "relay.nn.dense");
                     else if (op_name == "relay.bias_add")
-                        Binary2Relay(op, "relay.nn.bias_add");
+                        Op2Realy(op, "relay.nn.bias_add");
                     else if (op_name == "relay.bltz")
                         Bltz2Relay(op);
                     else if (op_name == "relay.loop_field")
