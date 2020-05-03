@@ -108,7 +108,7 @@ def ConstOp : Toy_Op<"const", [NoSideEffect]> {
   }];
 
   // The const operation takes an attribute as the only input.
-  let arguments = (ins F64ElementsAttr:$value);
+  let arguments = (ins StrAttr:$data_struct, F64ElementsAttr:$value);
 
   // The const operation returns a single value of TensorType.
   let results = (outs F64Tensor);
@@ -119,13 +119,13 @@ def ConstOp : Toy_Op<"const", [NoSideEffect]> {
   let builders = [
     // Build a const with a given const tensor value.
     OpBuilder<"Builder *builder, OperationState &result, "
-              "DenseElementsAttr value", [{
-      build(builder, result, value.getType(), value);
+              "StringRef data_struct, DenseElementsAttr value", [{
+      build(builder, result, value.getType(), data_struct, value);
     }]>,
 
     // Build a const with a given const floating-point value.
-    OpBuilder<"Builder *builder, OperationState &result, double value", [{
-      buildConstOp(builder, result, value);
+    OpBuilder<"Builder *builder, OperationState &result, StringRef data_struct, double value", [{
+      buildConstOp(builder, result, data_struct, value);
     }]>
   ];
 }
@@ -365,21 +365,40 @@ def TransposeOp : Toy_Op<"transpose",
   let verifier = [{ return ::verify(*this); }];
 }
 
-def Conv1dOp : Toy_Op<"conv1d",
+def LaysersConv2dOp : Toy_Op<"layers_conv2d",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
-  let summary = "conv1d operation";
-  let description = [{
-    The "conv1d" operation performs element-wise addition between two tensors.
-  }];
+  let summary = "layers_conv2d operation";
 
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$channels, F64Tensor:$groups,
+                    F64Tensor:$kernel_size, F64Tensor:$strides, F64Tensor:$padding,
+                    F64Tensor:$data_layout, F64Tensor:$kernel_layout);
   let results = (outs F64Tensor);
 
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildConv1dOp(b, result, lhs, rhs);
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value channels,"
+                "Value groups, Value kernel_size, Value strides, Value padding,"
+                "Value data_layout, Value kernel_layout", [{
+      buildLaysersConv2dOp(b, result, data, channels, groups, kernel_size, strides,
+                     padding, data_layout, kernel_layout);
     }]
-  >];
+    >
+  ];
+}
+
+def LaysersBatchNormOp : Toy_Op<"layers_bacth_norm_infer",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "layers_bacth_norm_infer operation";
+
+  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, StrAttr:$name);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value epsilon,"
+                "Value scale, StringRef name", [{
+      buildLaysersBatchNormOp(b, result, data, epsilon, scale, name);
+    }]
+    >
+  ];
 }
 
 def SoftmaxOp : Toy_Op<"softmax", 
@@ -425,6 +444,30 @@ def BiasAddOp : Toy_Op<"bias_add",
       buildBiasAddOp(b, result, lhs, rhs);
     }]
   >];
+}
+
+def BoolOp : Toy_Op<"bool", [NoSideEffect]>{
+    let summary = "bool operation";
+    let arguments = (ins StrAttr:$value);
+    let results = (outs F64Tensor);    
+    let builders = [
+        OpBuilder<"Builder *b, OperationState &result, "
+            "StringRef value", [{
+            buildBoolOp(b, result, value);
+        }]>
+    ];
+}
+
+def StringOp : Toy_Op<"string", [NoSideEffect]>{
+    let summary = "string operation";
+    let arguments = (ins StrAttr:$str);
+    let results = (outs F64Tensor);    
+    let builders = [
+        OpBuilder<"Builder *b, OperationState &result, "
+            "StringRef str", [{
+            buildStringOp(b, result, str);
+        }]>
+    ];
 }
 
 def IfOp : Toy_Op<"if", [NoSideEffect]>{

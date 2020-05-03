@@ -47,7 +47,9 @@ namespace toy {
             Expr_Const,
             Expr_Tuple,
             Expr_Break,
-            Expr_Index
+            Expr_Index,
+            Expr_Bool,
+            Expr_String
         };
 
         ExprAST(ExprASTKind kind, Location location)
@@ -266,7 +268,7 @@ namespace toy {
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_Print; }
     };
 
-/// Expression class for builtin print calls.
+/// Expression class for index.
     class IndexExprAST : public ExprAST {
         std::string name;
         std::unique_ptr <ExprAST> index;
@@ -281,6 +283,41 @@ namespace toy {
 
         /// LLVM style RTTI
         static bool classof(const ExprAST *c) { return c->getKind() == Expr_Index; }
+    };
+
+/// Expression class for string.
+    class StringExprAST : public ExprAST {
+        std::string name;
+        std::string str;
+
+    public:
+        StringExprAST(Location loc, llvm::StringRef name, llvm::StringRef str)
+                : ExprAST(Expr_String, loc), name(name), str(str) {}
+
+        llvm::StringRef getName() { return name; }
+
+        llvm::StringRef getStr() { return str; }
+
+        /// LLVM style RTTI
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_String; }
+    };
+
+
+/// Expression class for bool type.
+    class BoolExprAST : public ExprAST {
+        std::string name;
+        std::string value;
+
+    public:
+        BoolExprAST(Location loc, llvm::StringRef name, llvm::StringRef value)
+                : ExprAST(Expr_Bool, loc), name(name), value(value) {}
+
+        llvm::StringRef getName() { return name; }
+
+        llvm::StringRef getValue() { return value; }
+
+        /// LLVM style RTTI
+        static bool classof(const ExprAST *c) { return c->getKind() == Expr_Bool; }
     };
 
 /// Expression class for a if operator.

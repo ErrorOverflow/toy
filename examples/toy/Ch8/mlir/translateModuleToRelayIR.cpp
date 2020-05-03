@@ -180,8 +180,8 @@ namespace {
             mlir::Operation *oop = constantop;
             auto tensorType = (*oop->result_type_begin()).cast<mlir::TensorType>();
             auto shape = tensorType.getShape();
-            int32_t dataNum = 1;
-            std::vector <int32_t> shape_vector;
+            uint32_t dataNum = 1;
+            std::vector <uint32_t> shape_vector;
             INDENT();
             std::cout << "var" << num << " = relay.var(\"var" << num << "\",shape=(";
             for (size_t i = 0; i < shape.size(); i++) {
@@ -193,14 +193,14 @@ namespace {
             std::stringstream tmp_para_define;
             tmp_para_define << std::string("\tdata") << num << std::string(" = ");
             std::vector<double> data;
-            for (int32_t i = 0; i < dataNum; i++) {
+            for (uint32_t i = 0; i < dataNum; i++) {
                 data.push_back(*valueIt++);
             }
             std::vector <std::string> result;
-            for (int32_t i = 0; i < dataNum; i++) {
+            for (uint32_t i = 0; i < dataNum; i++) {
                 result.push_back(std::to_string(data[i]));
             }
-            getDenseElement(result, tmp_para_define, shape_vector, 0, 0, result.size());
+            getDenseElement(result, tmp_para_define, '[', ']',shape_vector, 0, 0, result.size());
             func_para_define.append(tmp_para_define.str().append(";\n"));
             each_result.push_back(oop->getResult(0));
             num++;
@@ -208,14 +208,13 @@ namespace {
         }
 
         void Const2Relay(mlir::Operation &op) {
-            auto constantop = mlir::dyn_cast<mlir::relay::ConstOp>(&op);
-            auto constantValue = constantop.value();
-            auto valueIt = constantValue.getValues<double>().begin();
-            mlir::Operation *oop = constantop;
+            auto constop = mlir::dyn_cast<mlir::relay::ConstOp>(&op);
+            auto valueIt = constop.value().getValues<double>().begin();
+            mlir::Operation *oop = constop;
             auto tensorType = (*oop->result_type_begin()).cast<mlir::TensorType>();
             auto shape = tensorType.getShape();
-            int32_t dataNum = 1;
-            std::vector <int32_t> shape_vector;
+            uint32_t dataNum = 1;
+            std::vector <uint32_t> shape_vector;
             INDENT();
             for (size_t i = 0; i < shape.size(); i++) {
                 dataNum *= shape[i];
@@ -224,14 +223,24 @@ namespace {
             std::stringstream tmp_para_define;
             tmp_para_define << getString(tmp_num) << std::string(" = ");
             std::vector<double> data;
-            for (int32_t i = 0; i < dataNum; i++) {
+            for (uint32_t i = 0; i < dataNum; i++) {
                 data.push_back(*valueIt++);
             }
             std::vector <std::string> result;
-            for (int32_t i = 0; i < dataNum; i++) {
+            for (uint32_t i = 0; i < dataNum; i++) {
                 result.push_back(std::to_string(data[i]));
             }
-            getDenseElement(result, tmp_para_define, shape_vector, 0, 0, result.size());
+
+            llvm::StringRef data_struct = constop.data_struct();
+            char leftParen, rightParen;
+            if(data_struct == "list"){
+                leftParen = '[';
+                rightParen = ']';
+            } else if(data_struct == "tuple"){
+                leftParen = '(';
+                rightParen = ')';                
+            }
+            getDenseElement(result, tmp_para_define, leftParen, rightParen, shape_vector, 0, 0, result.size());
             cout << tmp_para_define.str() << ";\n";
             each_result.push_back(oop->getResult(0));
             tmp_num++;
@@ -260,28 +269,29 @@ namespace {
             tmp_num++;
         }
 
-        int getDenseElement(std::vector <std::string> &result, std::stringstream &out, std::vector <int32_t> shape,
-                             size_t n, size_t low, size_t high) {
+        int getDenseElement(std::vector <std::string> &result, std::stringstream &out, 
+                            char leftParen, char rightParen, std::vector <uint32_t> shape, 
+                            size_t n, size_t low, size_t high) {
             if(shape.size() == 0){
                 out << result[0];
                 return 0;
             }
             if (n == shape.size() - 1) {
-                out << "[";
+                out << leftParen;
                 for (size_t i = low; i < high; i++) {
-                    //std::cout<< i<<std::endl;
                     out << result[i];
                     if (i != high - 1) out << ",";
                 }
-                out << "]";
+                out << rightParen;
                 return 0;
             }
             size_t size = (high - low) / shape[n];
-            out << "[";
-            for (int32_t i = 0; i < shape[n]; i++) {
-                getDenseElement(result, out, shape, n + 1, low + i * size, low + (i + 1) * size);
+            out << leftParen;
+            for (uint32_t i = 0; i < shape[n]; i++) {
+                getDenseElement(result, out, leftParen, rightParen, shape, 
+                                n + 1, low + i * size, low + (i + 1) * size);
             }
-            out << "]";
+            out << rightParen;
             return 0;
         }
 
@@ -294,6 +304,7 @@ namespace {
             for(auto arg : configs){
                 each_result.push_back(arg);
                 cout << getString(tmp_num++);
+                if(arg != configs.back()) cout << ", ";
             }
             cout << "):\n";
         }
@@ -323,10 +334,10 @@ namespace {
             each_result.clear();
             func_name = getFunction().getName().str();
             //cout << tmp_num << endl;
-            if(getFunction().getName() == "main")
-                for(auto i : hashtable){
-                    cout << i.first << " " << i.second << endl;
-                }
+            // if(getFunction().getName() == "main")
+            //     for(auto i : hashtable){
+            //         cout << i.first << " " << i.second << endl;
+            //     }
             FuncBuild();
             for (mlir::Block &block : getFunction()) {
                 for (mlir::Operation &op : llvm::make_early_inc_range(block)) {

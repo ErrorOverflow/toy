@@ -194,14 +194,14 @@ namespace toy {
             std::vector <int64_t> dims;
             do {
                 if (lexer.getCurToken() != tok_number)
-                    return parseError<ExprAST>("<num> or [", "in tuple expression");
+                    return parseError<ExprAST>("<num> or (", "in tuple expression");
                 values.push_back(parseNumberExpr());
 
                 if (lexer.getCurToken() == ')')
                     break;
 
                 if (lexer.getCurToken() != ',')
-                    return parseError<ExprAST>("] or ,", "in tuple expression");
+                    return parseError<ExprAST>(") or ,", "in tuple expression");
 
                 lexer.getNextToken(); 
             } while (true);
@@ -430,6 +430,48 @@ namespace toy {
                                                     std::move(*type), std::move(expr));
         }
 
+        std::unique_ptr <BoolExprAST> parseBool() {
+            if (lexer.getCurToken() != tok_bool)
+                return parseError<BoolExprAST>("bool", "to begin declaration");
+            auto loc = lexer.getLastLocation();
+            lexer.getNextToken();
+
+            if (lexer.getCurToken() != tok_identifier)
+                return parseError<BoolExprAST>("identified",
+                                                  "in bool declaration");
+            std::string id(lexer.getId());
+            lexer.getNextToken();
+
+            lexer.consume(Token('='));
+            if (lexer.getCurToken() != tok_identifier)
+                return parseError<BoolExprAST>("true or false",
+                                                  "in bool declaration");
+            std::string value(lexer.getId());
+            lexer.getNextToken();
+            return std::make_unique<BoolExprAST>(std::move(loc), std::move(id), std::move(value));
+        }        
+
+        std::unique_ptr <StringExprAST> parseString() {
+            if (lexer.getCurToken() != tok_str)
+                return parseError<StringExprAST>("string", "to begin declaration");
+            auto loc = lexer.getLastLocation();
+            lexer.getNextToken();
+
+            if (lexer.getCurToken() != tok_identifier)
+                return parseError<StringExprAST>("identified",
+                                                  "in bool declaration");
+            std::string id(lexer.getId());
+            lexer.getNextToken();
+
+            lexer.consume(Token('='));
+            if (lexer.getCurToken() != tok_string)
+                return parseError<StringExprAST>("true or false",
+                                                  "in bool declaration");
+            std::string str(lexer.getString());
+            lexer.getNextToken();
+            return std::make_unique<StringExprAST>(std::move(loc), std::move(id), std::move(str));
+        } 
+
         /// execution ::= primary = expression
         std::unique_ptr <ExeExprAST> parseExecution() {
             auto loc = lexer.getLastLocation();
@@ -469,6 +511,18 @@ namespace toy {
                     if (!varDecl)
                         return nullptr;
                     exprList->push_back(std::move(varDecl));
+                } else if (lexer.getCurToken() == tok_bool) {
+                    // bool declaration
+                    auto boolDecl = parseBool();
+                    if (!boolDecl)
+                        return nullptr;
+                    exprList->push_back(std::move(boolDecl));
+                } else if (lexer.getCurToken() == tok_str) {
+                    // string declaration
+                    auto strDecl = parseString();
+                    if (!strDecl)
+                        return nullptr;
+                    exprList->push_back(std::move(strDecl));
                 } else if(lexer.getCurToken() == tok_const){
                     auto constDecl = parseConst();
                     if (!constDecl)

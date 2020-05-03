@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <iostream>
 
 namespace toy {
 
@@ -36,6 +37,7 @@ namespace toy {
         tok_bracket_close = '}',
         tok_sbracket_open = '[',
         tok_sbracket_close = ']',
+        tok_quotation = '"',
 
         tok_eof = -1,
 
@@ -46,10 +48,13 @@ namespace toy {
         tok_if = -7,
         tok_for = -8,
         tok_const = -9,
+        tok_bool = -10,
+        tok_str = -13,
 
         // primary
         tok_identifier = -5,
         tok_number = -6,
+        tok_string = -12
     };
 
 /// The Lexer is an abstract base class providing all the facilities that the
@@ -85,6 +90,11 @@ namespace toy {
         llvm::StringRef getId() {
             assert(curTok == tok_identifier);
             return identifierStr;
+        }
+
+        llvm::StringRef getString() {
+            assert(curTok == tok_string);
+            return stringStr;
         }
 
         /// Return the current number (prereq: getCurToken() == tok_number)
@@ -154,7 +164,11 @@ namespace toy {
                 if (identifierStr == "if")
                     return tok_if;
                 if (identifierStr == "for")
-                    return tok_for;                
+                    return tok_for;
+                if (identifierStr == "bool")
+                    return tok_bool;
+                if (identifierStr == "string")
+                    return tok_str;                                       
                 return tok_identifier;
             }
 
@@ -180,6 +194,17 @@ namespace toy {
                     return getTok();
             }
 
+            if (lastChar == '"') {
+                lastChar = Token(getNextChar());
+                stringStr.clear();
+                while (lastChar != '"'){
+                    stringStr += (char) lastChar;
+                    lastChar = Token(getNextChar());
+                }
+                lastChar = Token(getNextChar());
+                return tok_string;
+            }
+
             // Check for end of file.  Don't eat the EOF.
             if (lastChar == EOF)
                 return tok_eof;
@@ -201,6 +226,9 @@ namespace toy {
 
         /// If the current Token is a number, this contains the value.
         double numVal = 0;
+
+        /// If the current Token is a string, this string contains the content.
+        std::string stringStr;
 
         /// The last value returned by getNextChar(). We need to keep it around as we
         /// always need to read ahead one character to decide when to end a token and

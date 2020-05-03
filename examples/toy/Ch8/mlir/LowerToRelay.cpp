@@ -106,7 +106,6 @@ namespace {
     using BltzOpLowering = BinaryOpLowering<toy::BltzOp, relay::BltzOp>;
     using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
     using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
-    using Conv1dOpLowering = BinaryOpLowering<toy::Conv1dOp, relay::Conv1dOp>;
     using IfOpLowering = ZeroOpLowering<toy::IfOp, relay::IfOp>;
     using ForOpLowering = ZeroOpLowering<toy::ForOp, relay::ForOp>;
     using LoopFieldOpLowering = ZeroOpLowering<toy::LoopFieldOp, relay::LoopFieldOp>;
@@ -137,9 +136,10 @@ namespace {
 
         PatternMatchResult matchAndRewrite(toy::ConstOp op,
                                            PatternRewriter &rewriter) const final {
-            DenseElementsAttr constValue = op.value();
+            auto constValue = op.value();
+            auto data_struct = op.data_struct();
             Location loc = op.getLoc();
-            auto constRelay = rewriter.create<relay::ConstOp>(loc, constValue.getType(), constValue);
+            auto constRelay = rewriter.create<relay::ConstOp>(loc, constValue.getType(), data_struct, constValue);
             rewriter.replaceOp(op, {constRelay});
             return matchSuccess();
         }
@@ -244,7 +244,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering, 
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering, 
-            ReshapeOpLowering, TransposeOpLowering, Conv1dOpLowering, PrintOpLowering>(&getContext());
+            ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the
     // conversion. The conversion will signal failure if any of our `illegal`

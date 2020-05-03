@@ -144,11 +144,12 @@ static mlir::LogicalResult verify(ConstantOp op) {
 }
 
 static void buildConstOp(mlir::Builder *builder, mlir::OperationState &state,
-                            double value) {
+                            StringRef data_struct, double value) {
     auto dataType = RankedTensorType::get({}, builder->getF64Type());
     auto dataAttribute = DenseElementsAttr::get(dataType, value);
     state.addTypes(dataType);
     state.addAttribute("value", dataAttribute);
+    state.addAttribute("data_struct", builder->getStringAttr(data_struct));
 }
 
 
@@ -189,6 +190,18 @@ static void buildIndexOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands(index);
     state.addAttribute("name", builder->getStringAttr(name));
+}
+
+static void buildBoolOp(mlir::Builder *builder, mlir::OperationState &state,
+                       StringRef value) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addAttribute("value", builder->getStringAttr(value));
+}
+
+static void buildStringOp(mlir::Builder *builder, mlir::OperationState &state,
+                       StringRef str) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addAttribute("str", builder->getStringAttr(str));
 }
 
 //===----------------------------------------------------------------------===//
@@ -299,15 +312,30 @@ static mlir::LogicalResult verify(TransposeOp op) {
 }
 
 //===----------------------------------------------------------------------===//
-// Conv1dOp
+// LaysersConv2dOp
 
-static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value lhs, mlir::Value rhs) {
+static void buildLaysersConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value channels, mlir::Value groups, 
+                       mlir::Value kernel_size, mlir::Value strides, mlir::Value padding, 
+                       mlir::Value data_layout, mlir::Value kernel_layout) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({lhs, rhs});
+    state.addOperands({data, channels, groups, kernel_size, strides, padding,
+                        data_layout, kernel_layout});
 }
 
-void Conv1dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+void LaysersConv2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// LaysersBatchNormOp
+// data = layers.batch_norm_infer(data=data, epsilon=2e-5, scale=False, name='bn_data')
+static void buildLaysersBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value epsilon, mlir::Value scale, StringRef name) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, epsilon, scale});
+    state.addAttribute("name", builder->getStringAttr(name));
+}
+
+void LaysersBatchNormOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
 // SoftmaxOp

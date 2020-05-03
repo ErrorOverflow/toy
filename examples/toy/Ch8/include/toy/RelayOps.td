@@ -108,7 +108,7 @@ def ConstOp : Relay_Op<"const", [NoSideEffect]> {
   }];
 
   // The constant operation takes an attribute as the only input.
-  let arguments = (ins F64ElementsAttr:$value);
+  let arguments = (ins StrAttr:$data_struct, F64ElementsAttr:$value);
 
   // The constant operation returns a single value of TensorType.
   let results = (outs F64Tensor);
@@ -119,13 +119,13 @@ def ConstOp : Relay_Op<"const", [NoSideEffect]> {
   let builders = [
     // Build a constant with a given constant tensor value.
     OpBuilder<"Builder *builder, OperationState &result, "
-              "DenseElementsAttr value", [{
-      build(builder, result, value.getType(), value);
+              "StringRef data_struct, DenseElementsAttr value", [{
+      build(builder, result, value.getType(), data_struct, value);
     }]>,
 
     // Build a constant with a given constant floating-point value.
-    OpBuilder<"Builder *builder, OperationState &result, double value", [{
-      buildConstOp(builder, result, value);
+    OpBuilder<"Builder *builder, OperationState &result, StringRef data_struct, double value", [{
+      buildConstOp(builder, result, data_struct, value);
     }]>
   ];
 

@@ -111,10 +111,12 @@ static mlir::LogicalResult verify(ConstantOp op) {
 }
 
 static void buildConstOp(mlir::Builder *builder, mlir::OperationState &state,
-                            double value) {
+                            StringRef data_struct, double value) {
     auto dataType = RankedTensorType::get({}, builder->getF64Type());
     auto dataAttribute = DenseElementsAttr::get(dataType, value);
-    ConstOp::build(builder, state, dataType, dataAttribute);
+    state.addTypes(dataType);
+    state.addAttribute("value", dataAttribute);
+    state.addAttribute("data_struct", builder->getStringAttr(data_struct));
 }
 
 static mlir::LogicalResult verify(ConstOp op) {

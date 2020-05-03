@@ -343,7 +343,7 @@ namespace {
             if(iteration == 1 && !isConst)
                 return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
             std::string data_struct = "list";
-            return builder.create<ConstOp>(loc(lit.loc()), type, dataAttribute);
+            return builder.create<ConstOp>(loc(lit.loc()), type, data_struct, dataAttribute);
         }
 
         mlir::Value mlirGen(TupleExprAST &lit) {
@@ -354,20 +354,17 @@ namespace {
             std::vector<double> data;
             data.reserve(std::accumulate(lit.getDims().begin(), lit.getDims().end(), 1,
                                          std::multiplies<int>()));
-            collectData(lit, data);
-
+            collectTuple(lit, data);
             // The type of this attribute is tensor of 64-bit floating-point with the
             // shape of the literal.
             mlir::Type elementType = builder.getF64Type();
             auto dataType = mlir::RankedTensorType::get(lit.getDims(), elementType);
-
             // This is the actual attribute that holds the list of values for this
             // tensor literal.
             auto dataAttribute =
                     mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
-
             std::string data_struct = "tuple";
-            return builder.create<ConstOp>(loc(lit.loc()), type, dataAttribute);
+            return builder.create<ConstOp>(loc(lit.loc()), type, data_struct, dataAttribute);
         }
 
         /// Recursive helper function to accumulate the data that compose an array
@@ -387,6 +384,14 @@ namespace {
 
             assert(isa<NumberExprAST>(expr) && "expected literal or number expr");
             data.push_back(cast<NumberExprAST>(expr).getValue());
+        }
+
+        void collectTuple(ExprAST &expr, std::vector<double> &data) {
+            auto *lit = dyn_cast<TupleExprAST>(&expr);
+            for (auto &value : lit->getValues()){
+                assert(isa<NumberExprAST>(value) && "expected literal or number expr");
+                data.push_back(cast<NumberExprAST>(*value).getValue());
+            }
         }
 
         /// Emit a call expression. It emits specific operations for the `transpose`
@@ -424,13 +429,17 @@ namespace {
                 return builder.create<SoftmaxOp>(location, operands[0]);
             }
 
-            if (callee == "conv1d") {
-                if (call.getArgs().size() != 2) {
+            if (callee == "layers_conv2d") {
+                if(call.getArgs().size() == 8){
+                    return builder.create<LaysersConv2dOp>(location, operands[0], operands[1],
+                                operands[2], operands[3], operands[4], operands[5], 
+                                operands[6], operands[7]);
+                }
+                else{
                     emitError(location, "MLIR codegen encountered an error: toy.conv1d "
-                                        "just accept 2 arguments");
+                                        "just accept 8 arguments");
                     return nullptr;
                 }
-                return builder.create<Conv1dOp>(location, operands[0], operands[1]);
             }
 
             if (callee == "dense") {
@@ -480,7 +489,7 @@ namespace {
             if(iteration == 1 && !isConst)
                 return builder.create<ConstantOp>(loc(num.loc()), num.getValue());
             std::string data_struct = "number";
-            return builder.create<ConstOp>(loc(num.loc()), num.getValue());
+            return builder.create<ConstOp>(loc(num.loc()), data_struct, num.getValue());
         }
 
         /// Dispatch codegen for the right expression subclass using RTTI. FIXME:
@@ -508,6 +517,9 @@ namespace {
                 case toy::ExprAST::Expr_Num:
                     r =  mlirGen(cast<NumberExprAST>(expr));
                     break;
+                case toy::ExprAST::Expr_Tuple:
+                    r =  mlirGen(cast<TupleExprAST>(expr));
+                    break;                    
                 default:
                     emitError(loc(expr.loc()))
                             << "MLIR codegen encountered an unhandled expr kind '"
@@ -534,15 +546,6 @@ namespace {
             insert_table(vardecl.getName());
             if (!value)
                 return nullptr;
-            // XXX:
-            // We have the initializer value, but in case the variable was declared
-            // with specific shape, we emit a "reshape" operation. It will get
-            // optimized out later as needed.
-            // if (!vardecl.getType().shape.empty()) {
-            //     value = builder.create<ReshapeOp>
-            //             (loc(vardecl.loc()), getType(vardecl.getType()), value);
-            //     insert_table(vardecl.getName());
-            // }
 
             // Register the value in the symbol table.
             if (failed(declare(vardecl.getName(), value)))
@@ -565,10 +568,29 @@ namespace {
             if (!value)
                 return nullptr;
 
-            // Register the value in the symbol table.
             if (failed(declare(constdecl.getName(), value)))
                 return nullptr;
             return value;
+        }
+
+        mlir::Value mlirGen(BoolExprAST &booldecl) {
+            auto value = booldecl.getValue();
+            auto name = booldecl.getName();
+            mlir::Value v = builder.create<BoolOp>(loc(booldecl.loc()), value);
+            insert_table(name);
+            if (failed(declare(name, v)))
+                return nullptr;
+            return v;
+        }
+
+        mlir::Value mlirGen(StringExprAST &strdecl) {
+            auto str = strdecl.getStr();
+            auto name = strdecl.getName();
+            mlir::Value v = builder.create<StringOp>(loc(strdecl.loc()), str);
+            insert_table(name);
+            if (failed(declare(name, v)))
+                return nullptr;
+            return v;
         }
 
         mlir::Value mlirGen(ExeExprAST &exe) {
@@ -604,6 +626,16 @@ namespace {
                 }
                 if (auto *constdecl = dyn_cast<ConstExprAST>(expr.get())) {
                     if (!mlirGen(*constdecl))
+                        return mlir::failure();
+                    continue;
+                }
+                if (auto *booldecl = dyn_cast<BoolExprAST>(expr.get())) {
+                    if (!mlirGen(*booldecl))
+                        return mlir::failure();
+                    continue;
+                }
+                if (auto *strdecl = dyn_cast<StringExprAST>(expr.get())) {
+                    if (!mlirGen(*strdecl))
                         return mlir::failure();
                     continue;
                 }
