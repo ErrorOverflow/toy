@@ -170,11 +170,27 @@ static void buildBltzOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addOperands({lhs, rhs});
 }
 
-static void buildConv1dOp(mlir::Builder *builder, mlir::OperationState &state,
-                          mlir::Value lhs, mlir::Value rhs) {
+static void buildLaysersConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value channels, mlir::Value groups, 
+                       mlir::Value kernel_size, mlir::Value strides, mlir::Value padding, 
+                       mlir::Value data_layout, mlir::Value kernel_layout) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({lhs, rhs});
+    state.addOperands({data, channels, groups, kernel_size, strides, padding,
+                        data_layout, kernel_layout});
 }
+
+static void buildConvKernelLayoutOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data_layout, mlir::Value is_depthwise) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data_layout, is_depthwise});
+}
+
+static void buildLaysersBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value epsilon, mlir::Value scale, mlir::Value name) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, epsilon, scale, name});
+}
+
 
 static void buildDenseOp(mlir::Builder *builder, mlir::OperationState &state,
                          mlir::Value lhs, mlir::Value rhs) {

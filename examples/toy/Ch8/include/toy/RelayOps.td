@@ -211,22 +211,66 @@ def BltzOp : Relay_Op<"bltz"> {
   >];
 }
 
-def Conv1dOp : Relay_Op<"conv1d"> {
-  let summary = "element-wise addition operation";
-  let description = [{
-    The "conv1d" operation performs element-wise addition between two tensors.
-    The shapes of the tensor operands are expected to match.
-  }];
+def LaysersConv2dOp : Relay_Op<"layers_conv2d", [NoSideEffect]> {
+  let summary = "layers_conv2d operation";
 
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$channels, F64Tensor:$groups,
+                    F64Tensor:$kernel_size, F64Tensor:$strides, F64Tensor:$padding,
+                    F64Tensor:$data_layout, F64Tensor:$kernel_layout);
   let results = (outs F64Tensor);
 
-  // Allow building an AddOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildConv1dOp(b, result, lhs, rhs);
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value channels,"
+                "Value groups, Value kernel_size, Value strides, Value padding,"
+                "Value data_layout, Value kernel_layout", [{
+      buildLaysersConv2dOp(b, result, data, channels, groups, kernel_size, strides,
+                     padding, data_layout, kernel_layout);
     }]
-  >];
+    >,
+    OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
+      buildLaysersConv2dOp(b, result, operands[0], operands[1], operands[2], operands[3], operands[4],
+                     operands[5], operands[6], operands[7]);
+    }]
+    >    
+  ];
+}
+
+def LaysersBatchNormOp : Relay_Op<"layers_bacth_norm_infer", [NoSideEffect]> {
+  let summary = "layers_bacth_norm_infer operation";
+
+  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$name);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value epsilon,"
+                "Value scale, Value name", [{
+      buildLaysersBatchNormOp(b, result, data, epsilon, scale, name);
+    }]
+    >,
+    OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
+      buildLaysersBatchNormOp(b, result, operands[0], operands[1], operands[2], operands[3]);
+    }]
+    >
+  ];
+}
+
+def ConvKernelLayoutOp : Relay_Op<"conv_kernel_layout", [NoSideEffect]> {
+  let summary = "conv_kernel_layout operation";
+
+  let arguments = (ins F64Tensor:$data_layout, F64Tensor:$is_depthwise);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result,"
+                "Value data_layout, Value is_depthwise", [{
+      buildConvKernelLayoutOp(b, result, data_layout, is_depthwise);
+    }]
+    >,
+    OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
+      buildConvKernelLayoutOp(b, result, operands[0], operands[1]);
+    }]
+    >
+  ];
 }
 
 def PrintOp : Relay_Op<"print"> {

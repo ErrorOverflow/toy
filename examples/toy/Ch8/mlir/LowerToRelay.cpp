@@ -20,7 +20,8 @@
 // have been inlined, and all shapes have been resolved.
 //
 //===----------------------------------------------------------------------===//
-#include<stdio.h>
+#include <stdio.h>
+#include <vector>
 
 #include "toy/Dialect.h"
 #include "toy/Passes.h"
@@ -100,6 +101,22 @@ namespace {
         }
     };
 
+    template<typename Op, typename LoweredOp>
+    struct ComplexOpLowering : public ConversionPattern {
+        ComplexOpLowering(MLIRContext *ctx) : ConversionPattern(Op::getOperationName(), 1, ctx) {}
+
+        PatternMatchResult matchAndRewrite(Operation *op, ArrayRef <Value> operand,
+                                           ConversionPatternRewriter &rewriter) const final {
+            std::vector<mlir::Value> operands;
+            for(uint32_t i = 0 ; i < op->getNumOperands(); i++)
+                operands.push_back(op->getOperand(i));
+            Location loc = op->getLoc();
+            auto relay = rewriter.create<LoweredOp>(loc, operands);
+            rewriter.replaceOp(op, {relay});
+            return matchSuccess();
+        }
+    };
+
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
     using MulOpLowering = BinaryOpLowering<toy::MulOp, relay::MulOp>;
     using BgtzOpLowering = BinaryOpLowering<toy::BgtzOp, relay::BgtzOp>;
@@ -113,6 +130,9 @@ namespace {
     using TransposeOpLowering = UnaryOpLowering<toy::TransposeOp, relay::TransposeOp>;
     using SoftmaxOpLowering = UnaryOpLowering<toy::SoftmaxOp, relay::SoftmaxOp>;
     using ReshapeOpLowering = UnaryOpLowering<toy::ReshapeOp, relay::ReshapeOp>;
+    using LaysersConv2dOpLowering = ComplexOpLowering<toy::LaysersConv2dOp, relay::LaysersConv2dOp>;
+    using LaysersBatchNormOpLowering = ComplexOpLowering<toy::LaysersBatchNormOp, relay::LaysersBatchNormOp>;
+    using ConvKernelLayoutOpLowering = ComplexOpLowering<toy::ConvKernelLayoutOp, relay::ConvKernelLayoutOp>;
 
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Constant operations
@@ -158,6 +178,8 @@ namespace {
             return matchSuccess();
         }
     };
+
+
 
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Return operations
@@ -243,6 +265,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, ConstOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering, 
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
+            LaysersConv2dOpLowering, LaysersBatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering, 
             ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 
