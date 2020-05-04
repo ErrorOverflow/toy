@@ -326,13 +326,23 @@ static void buildLaysersConv2dOp(mlir::Builder *builder, mlir::OperationState &s
 void LaysersConv2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
+// ConvKernelLayoutOp
+// def conv_kernel_layout(data_layout, is_depthwise=False):
+static void buildConvKernelLayoutOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data_layout, mlir::Value is_depthwise) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data_layout, is_depthwise});
+}
+
+void ConvKernelLayoutOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
 // LaysersBatchNormOp
 // data = layers.batch_norm_infer(data=data, epsilon=2e-5, scale=False, name='bn_data')
 static void buildLaysersBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value data, mlir::Value epsilon, mlir::Value scale, StringRef name) {
+                       mlir::Value data, mlir::Value epsilon, mlir::Value scale, mlir::Value name) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({data, epsilon, scale});
-    state.addAttribute("name", builder->getStringAttr(name));
+    state.addOperands({data, epsilon, scale, name});
 }
 
 void LaysersBatchNormOp::inferShapes() { getResult().setType(getOperand(0).getType()); }

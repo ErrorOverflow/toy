@@ -389,13 +389,29 @@ def LaysersBatchNormOp : Toy_Op<"layers_bacth_norm_infer",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "layers_bacth_norm_infer operation";
 
-  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, StrAttr:$name);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$name);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value epsilon,"
-                "Value scale, StringRef name", [{
+                "Value scale, Value name", [{
       buildLaysersBatchNormOp(b, result, data, epsilon, scale, name);
+    }]
+    >
+  ];
+}
+
+def ConvKernelLayoutOp : Toy_Op<"conv_kernel_layout",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "conv_kernel_layout operation";
+
+  let arguments = (ins F64Tensor:$data_layout, F64Tensor:$is_depthwise);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result,"
+                "Value data_layout, Value is_depthwise", [{
+      buildConvKernelLayoutOp(b, result, data_layout, is_depthwise);
     }]
     >
   ];

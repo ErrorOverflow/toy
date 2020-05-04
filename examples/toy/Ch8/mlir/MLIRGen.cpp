@@ -436,8 +436,31 @@ namespace {
                                 operands[6], operands[7]);
                 }
                 else{
-                    emitError(location, "MLIR codegen encountered an error: toy.conv1d "
+                    emitError(location, "MLIR codegen encountered an error: toy.layers_conv2d "
                                         "just accept 8 arguments");
+                    return nullptr;
+                }
+            }
+
+            if (callee == "layers_conv_kernel_layout") {
+                if(call.getArgs().size() == 2){
+                    return builder.create<ConvKernelLayoutOp>(location, operands[0], operands[1]);
+                }
+                else{
+                    emitError(location, "MLIR codegen encountered an error: toy.layers_conv_kernel_layout "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+            }
+
+            if (callee == "layers_batch_norm_infer") {
+                if(call.getArgs().size() == 4){
+                    return builder.create<LaysersBatchNormOp>(location, operands[0], operands[1],
+                                operands[2], operands[3]);
+                }
+                else{
+                    emitError(location, "MLIR codegen encountered an error: toy.layers_batch_norm_infer "
+                                        "just accept 4 arguments");
                     return nullptr;
                 }
             }
