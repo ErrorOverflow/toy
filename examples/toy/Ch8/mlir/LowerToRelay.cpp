@@ -118,7 +118,6 @@ namespace {
     };
 
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
-    using MulOpLowering = BinaryOpLowering<toy::MulOp, relay::MulOp>;
     using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
     using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
     using IfOpLowering = ZeroOpLowering<toy::IfOp, relay::IfOp>;
@@ -273,7 +272,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // Now that the conversion target has been defined, we just need to provide
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
-    patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, ConstOpLowering,
+    patterns.insert<AddOpLowering, ConstantOpLowering, ConstOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, BinOpLowering, 
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,

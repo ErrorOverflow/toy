@@ -159,24 +159,6 @@ def AddOp : Relay_Op<"add"> {
   >];
 }
 
-def MulOp : Relay_Op<"mul"> {
-  let summary = "element-wise multiplication operation";
-  let description = [{
-    The "mul" operation performs element-wise multiplication between two
-    tensors. The shapes of the tensor operands are expected to match.
-  }];
-
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
-  let results = (outs F64Tensor);
-
-  // Allow building a MulOp with from the two input operands.
-  let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildMulOp(b, result, lhs, rhs);
-    }]
-  >];
-}
-
 def BinOp : Relay_Op<"bin", [NoSideEffect]> {
   let arguments = (ins StrAttr:$op, F64Tensor:$lhs, F64Tensor:$rhs);
   let results = (outs F64Tensor);

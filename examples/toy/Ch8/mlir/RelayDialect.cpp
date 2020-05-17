@@ -152,12 +152,6 @@ static void buildAddOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addOperands({lhs, rhs});
 }
 
-static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value lhs, mlir::Value rhs) {
-    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({lhs, rhs});
-}
-
 static void buildBinOp(mlir::Builder *builder, mlir::OperationState &state,
                        StringRef op, mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));

@@ -205,19 +205,6 @@ static void buildStringOp(mlir::Builder *builder, mlir::OperationState &state,
 }
 
 //===----------------------------------------------------------------------===//
-// MulOp
-
-static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value lhs, mlir::Value rhs) {
-    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({lhs, rhs});
-}
-
-/// Infer the output shape of the MulOp, this is required by the shape inference
-/// interface.
-void MulOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
-
-//===----------------------------------------------------------------------===//
 // BinOp
 static void buildBinOp(mlir::Builder *builder, mlir::OperationState &state,
                        StringRef op, mlir::Value lhs, mlir::Value rhs) {
