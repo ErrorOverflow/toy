@@ -339,7 +339,7 @@ def TransposeOp : Toy_Op<"transpose",
   let verifier = [{ return ::verify(*this); }];
 }
 
-def LaysersConv2dOp : Toy_Op<"conv2d",
+def Conv2dOp : Toy_Op<"conv2d",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "conv2d operation";
 
@@ -352,24 +352,24 @@ def LaysersConv2dOp : Toy_Op<"conv2d",
     OpBuilder<"Builder *b, OperationState &result, Value data, Value channels,"
                 "Value groups, Value kernel_size, Value strides, Value padding,"
                 "Value data_layout, Value kernel_layout", [{
-      buildLaysersConv2dOp(b, result, data, channels, groups, kernel_size, strides,
+      buildConv2dOp(b, result, data, channels, groups, kernel_size, strides,
                      padding, data_layout, kernel_layout);
     }]
     >
   ];
 }
 
-def LaysersBatchNormOp : Toy_Op<"layers_bacth_norm_infer",
+def BatchNormOp : Toy_Op<"bacth_norm",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
-  let summary = "layers_bacth_norm_infer operation";
+  let summary = "bacth_norm operation";
 
-  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$name);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$x, F64Tensor:$y);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value epsilon,"
-                "Value scale, Value name", [{
-      buildLaysersBatchNormOp(b, result, data, epsilon, scale, name);
+                "Value scale, Value x, Value y", [{
+      buildBatchNormOp(b, result, data, epsilon, scale, x, y);
     }]
     >
   ];

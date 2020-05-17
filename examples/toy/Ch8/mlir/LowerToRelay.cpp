@@ -128,8 +128,8 @@ namespace {
     using TransposeOpLowering = UnaryOpLowering<toy::TransposeOp, relay::TransposeOp>;
     using SoftmaxOpLowering = UnaryOpLowering<toy::SoftmaxOp, relay::SoftmaxOp>;
     using ReshapeOpLowering = UnaryOpLowering<toy::ReshapeOp, relay::ReshapeOp>;
-    using LaysersConv2dOpLowering = ComplexOpLowering<toy::LaysersConv2dOp, relay::LaysersConv2dOp>;
-    using LaysersBatchNormOpLowering = ComplexOpLowering<toy::LaysersBatchNormOp, relay::LaysersBatchNormOp>;
+    using Conv2dOpLowering = ComplexOpLowering<toy::Conv2dOp, relay::Conv2dOp>;
+    using BatchNormOpLowering = ComplexOpLowering<toy::BatchNormOp, relay::BatchNormOp>;
     using ConvKernelLayoutOpLowering = ComplexOpLowering<toy::ConvKernelLayoutOp, relay::ConvKernelLayoutOp>;
 
 //===----------------------------------------------------------------------===//
@@ -276,7 +276,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, ConstOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, BinOpLowering, 
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
-            LaysersConv2dOpLowering, LaysersBatchNormOpLowering, ConvKernelLayoutOpLowering,
+            Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, 
             ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 

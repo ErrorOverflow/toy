@@ -295,9 +295,9 @@ static mlir::LogicalResult verify(TransposeOp op) {
 }
 
 //===----------------------------------------------------------------------===//
-// LaysersConv2dOp
+// Conv2dOp
 
-static void buildLaysersConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
+static void buildConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value data, mlir::Value channels, mlir::Value groups, 
                        mlir::Value kernel_size, mlir::Value strides, mlir::Value padding, 
                        mlir::Value data_layout, mlir::Value kernel_layout) {
@@ -306,7 +306,7 @@ static void buildLaysersConv2dOp(mlir::Builder *builder, mlir::OperationState &s
                         data_layout, kernel_layout});
 }
 
-void LaysersConv2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+void Conv2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
 // ConvKernelLayoutOp
@@ -320,15 +320,16 @@ static void buildConvKernelLayoutOp(mlir::Builder *builder, mlir::OperationState
 void ConvKernelLayoutOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
-// LaysersBatchNormOp
-// data = layers.batch_norm_infer(data=data, epsilon=2e-5, scale=False, name='bn_data')
-static void buildLaysersBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value data, mlir::Value epsilon, mlir::Value scale, mlir::Value name) {
+// BatchNormOp
+// data = layers.batch_norm_infer(data=data, epsilon=2e-5, scale=False, name='%ibn_data%i')
+static void buildBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
+                    mlir::Value data, mlir::Value epsilon, mlir::Value scale,
+                    mlir::Value x, mlir::Value y) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({data, epsilon, scale, name});
+    state.addOperands({data, epsilon, scale, x, y});
 }
 
-void LaysersBatchNormOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+void BatchNormOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
 // SoftmaxOp

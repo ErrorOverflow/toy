@@ -189,7 +189,7 @@ def BinOp : Relay_Op<"bin", [NoSideEffect]> {
   ];
 }
 
-def LaysersConv2dOp : Relay_Op<"conv2d", [NoSideEffect]> {
+def Conv2dOp : Relay_Op<"conv2d", [NoSideEffect]> {
   let summary = "conv2d operation";
 
   let arguments = (ins F64Tensor:$data, F64Tensor:$channels, F64Tensor:$groups,
@@ -201,32 +201,32 @@ def LaysersConv2dOp : Relay_Op<"conv2d", [NoSideEffect]> {
     OpBuilder<"Builder *b, OperationState &result, Value data, Value channels,"
                 "Value groups, Value kernel_size, Value strides, Value padding,"
                 "Value data_layout, Value kernel_layout", [{
-      buildLaysersConv2dOp(b, result, data, channels, groups, kernel_size, strides,
+      buildConv2dOp(b, result, data, channels, groups, kernel_size, strides,
                      padding, data_layout, kernel_layout);
     }]
     >,
     OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
-      buildLaysersConv2dOp(b, result, operands[0], operands[1], operands[2], operands[3], operands[4],
+      buildConv2dOp(b, result, operands[0], operands[1], operands[2], operands[3], operands[4],
                      operands[5], operands[6], operands[7]);
     }]
     >    
   ];
 }
 
-def LaysersBatchNormOp : Relay_Op<"layers_bacth_norm_infer", [NoSideEffect]> {
-  let summary = "layers_bacth_norm_infer operation";
+def BatchNormOp : Relay_Op<"bacth_norm", [NoSideEffect]> {
+  let summary = "bacth_norm operation";
 
-  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$name);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$x, F64Tensor:$y);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value epsilon,"
-                "Value scale, Value name", [{
-      buildLaysersBatchNormOp(b, result, data, epsilon, scale, name);
+                "Value scale, Value x, Value y", [{
+      buildBatchNormOp(b, result, data, epsilon, scale, x, y);
     }]
     >,
     OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
-      buildLaysersBatchNormOp(b, result, operands[0], operands[1], operands[2], operands[3]);
+      buildBatchNormOp(b, result, operands[0], operands[1], operands[2], operands[3], operands[4]);
     }]
     >
   ];

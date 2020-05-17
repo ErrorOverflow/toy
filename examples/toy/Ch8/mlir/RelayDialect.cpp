@@ -165,7 +165,7 @@ static void buildBinOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addAttribute("op", builder->getStringAttr(op));
 }
 
-static void buildLaysersConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
+static void buildConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value data, mlir::Value channels, mlir::Value groups, 
                        mlir::Value kernel_size, mlir::Value strides, mlir::Value padding, 
                        mlir::Value data_layout, mlir::Value kernel_layout) {
@@ -180,10 +180,10 @@ static void buildConvKernelLayoutOp(mlir::Builder *builder, mlir::OperationState
     state.addOperands({data_layout, is_depthwise});
 }
 
-static void buildLaysersBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value data, mlir::Value epsilon, mlir::Value scale, mlir::Value name) {
+static void buildBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value epsilon, mlir::Value scale, mlir::Value x, mlir::Value y) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({data, epsilon, scale, name});
+    state.addOperands({data, epsilon, scale, x, y});
 }
 
 
