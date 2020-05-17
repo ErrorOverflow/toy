@@ -218,30 +218,13 @@ static void buildMulOp(mlir::Builder *builder, mlir::OperationState &state,
 void MulOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
-// BgtzOp
-
-static void buildBgtzOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value lhs, mlir::Value rhs) {
+// BinOp
+static void buildBinOp(mlir::Builder *builder, mlir::OperationState &state,
+                       StringRef op, mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands({lhs, rhs});
+    state.addAttribute("op", builder->getStringAttr(op));
 }
-
-/// Infer the output shape of the GreaterOp, this is required by the shape inference
-/// interface.
-void BgtzOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
-
-//===----------------------------------------------------------------------===//
-// BltzOp
-
-static void buildBltzOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value lhs, mlir::Value rhs) {
-    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({lhs, rhs});
-}
-
-/// Infer the output shape of the GreaterOp, this is required by the shape inference
-/// interface.
-void BltzOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
 // ReturnOp

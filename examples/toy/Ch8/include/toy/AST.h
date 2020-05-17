@@ -217,17 +217,17 @@ namespace toy {
 
 /// Expression class for a binary operator.
     class BinaryExprAST : public ExprAST {
-        char op;
+        std::string op;
         std::unique_ptr <ExprAST> lhs, rhs;
 
     public:
-        char getOp() { return op; }
+        llvm::StringRef getOp() { return op; }
 
         ExprAST *getLHS() { return lhs.get(); }
 
         ExprAST *getRHS() { return rhs.get(); }
 
-        BinaryExprAST(Location loc, char Op, std::unique_ptr <ExprAST> lhs,
+        BinaryExprAST(Location loc, llvm::StringRef Op, std::unique_ptr <ExprAST> lhs,
                       std::unique_ptr <ExprAST> rhs)
                 : ExprAST(Expr_BinOp, loc), op(Op), lhs(std::move(lhs)),
                   rhs(std::move(rhs)) {}

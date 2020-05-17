@@ -55,14 +55,16 @@ namespace {
         uint32_t tmp_num;
         uint32_t loop_flag = 0;
         uint32_t indent = 0;
+        uint32_t *counter;
         bool is_loop_field = false;
+
         std::string func_name;
+        std::string func_para_define;
         std::vector <mlir::Value> each_result;
         std::vector <std::string> while_end;
         std::vector <uint32_t> loop_round;
-        std::string func_para_define; 
+
         unordered_map <uint32_t, std::string> &hashtable;
-        uint32_t *counter;
 
         void Op2Realy(mlir::Operation &op, std::string convert_name){
             std::stringstream tmp_expr;
@@ -321,14 +323,7 @@ namespace {
             }
         }
 
-        std::string getString(uint32_t n){
-            return (hashtable.find(n)->second);
-        }
-
-    public:
-        RelayAPIPass(unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter)
-                 : hashtable(hashtable), counter(counter){}
-        void runOnFunction() override {
+        void runOnFunctionInitial(){
             indent = 1;
             tmp_num = *counter;
             each_result.clear();
@@ -338,6 +333,17 @@ namespace {
             //     for(auto i : hashtable){
             //         cout << i.first << " " << i.second << endl;
             //     }
+        }
+
+        std::string getString(uint32_t n){
+            return (hashtable.find(n)->second);
+        }
+
+    public:
+        RelayAPIPass(unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter)
+                 : counter(counter), hashtable(hashtable){}
+        void runOnFunction() override {
+            runOnFunctionInitial();
             FuncBuild();
             for (mlir::Block &block : getFunction()) {
                 for (mlir::Operation &op : llvm::make_early_inc_range(block)) {

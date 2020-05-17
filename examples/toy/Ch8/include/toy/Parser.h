@@ -60,13 +60,17 @@ namespace toy {
     private:
         Lexer &lexer;
         bool isConst = false;
+        bool isJudge = false;
         /// Parse a if block.
         /// if := ([primary { < | > } primary]) block ;
         std::unique_ptr <IfExprAST> parseIf() {
             auto loc = lexer.getLastLocation();
             lexer.consume(tok_if);
             lexer.consume(Token('('));
-            auto value = parseExpression();
+            isJudge = true;
+            auto value = parseJudge();
+            //std::cout << (char)lexer.getCurToken() << std::endl;
+            isJudge = false;
             lexer.consume(Token(')'));
             auto expr_list = parseBlock();
 
@@ -81,7 +85,9 @@ namespace toy {
             lexer.consume(Token('('));
             auto decl = parseConst();
             lexer.consume(Token(';'));
-            auto value = parseExpression();
+            isJudge = true;
+            auto value = parseJudge();
+            isJudge = false;
             lexer.consume(Token(';'));
             auto expr = parseExecution();
             lexer.consume(Token(')'));
@@ -305,6 +311,29 @@ namespace toy {
                     return nullptr;
             }
         }
+        //Expression
+        std::unique_ptr <ExprAST> parseJudge() { 
+            auto lhs = parsePrimary();
+            if(!lhs)
+                return parseError<ExprAST>("expression", "to complete binary operator");
+
+            std::string op;
+            int binOp = lexer.getCurToken();
+            lexer.consume(Token(binOp));
+            op.push_back((char)binOp);
+            if(lexer.getCurToken() == '='){
+                binOp = lexer.getCurToken();
+                lexer.consume(Token(binOp));
+                op.push_back((char)binOp);
+            }
+            auto loc = lexer.getLastLocation();
+            auto rhs = parsePrimary();
+            if (!rhs)
+                return parseError<ExprAST>("expression", "to complete binary operator");
+
+            return std::make_unique<BinaryExprAST>(std::move(loc), std::move(op),
+                                                    std::move(lhs), std::move(rhs));        
+        }  
 
         /// Recursively parse the right hand side of a binary expression, the ExprPrec
         /// argument indicates the precedence of the current binary operator.
@@ -322,8 +351,10 @@ namespace toy {
                     return lhs;
 
                 // Okay, we know this is a binop.
+                std::string op;
                 int binOp = lexer.getCurToken();
                 lexer.consume(Token(binOp));
+                op.push_back((char)binOp);
                 auto loc = lexer.getLastLocation();
 
                 // Parse the primary expression after the binary operator.
@@ -341,7 +372,7 @@ namespace toy {
                 }
 
                 // Merge lhs/RHS.
-                lhs = std::make_unique<BinaryExprAST>(std::move(loc), binOp,
+                lhs = std::make_unique<BinaryExprAST>(std::move(loc), std::move(op),
                                                       std::move(lhs), std::move(rhs));
             }
         }
@@ -351,7 +382,6 @@ namespace toy {
             auto lhs = parsePrimary();
             if (!lhs)
                 return nullptr;
-
             return parseBinOpRHS(0, std::move(lhs));
         }
 
@@ -459,14 +489,14 @@ namespace toy {
 
             if (lexer.getCurToken() != tok_identifier)
                 return parseError<StringExprAST>("identified",
-                                                  "in bool declaration");
+                                                  "in string declaration");
             std::string id(lexer.getId());
             lexer.getNextToken();
 
             lexer.consume(Token('='));
             if (lexer.getCurToken() != tok_string)
-                return parseError<StringExprAST>("true or false",
-                                                  "in bool declaration");
+                return parseError<StringExprAST>("\"string\"",
+                                                  "in string declaration");
             std::string str(lexer.getString());
             lexer.getNextToken();
             return std::make_unique<StringExprAST>(std::move(loc), std::move(id), std::move(str));

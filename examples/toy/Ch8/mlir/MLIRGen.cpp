@@ -260,15 +260,15 @@ namespace {
             auto location = loc(binop.loc());
             // Derive the operation name from the binary operator. At the moment we only
             // support '+' and '*'.
-            switch (binop.getOp()) {
-                case '+':
-                    return builder.create<AddOp>(location, lhs, rhs);
-                case '*':
-                    return builder.create<MulOp>(location, lhs, rhs);
-                case '>':
-                    return builder.create<BgtzOp>(location, lhs, rhs);
-                case '<':
-                    return builder.create<BltzOp>(location, lhs, rhs);
+            if(binop.getOp() == "+"){
+                return builder.create<AddOp>(location, lhs, rhs);
+            }
+            if(binop.getOp() == "*"){
+                return builder.create<MulOp>(location, lhs, rhs);
+            }
+            if(binop.getOp() == ">" || binop.getOp() == "<" || binop.getOp() == ">="
+                || binop.getOp() == "<=" || binop.getOp() == "=="){
+                return builder.create<BinOp>(location, binop.getOp(),lhs, rhs);
             }
             emitError(location, "invalid binary operator '") << binop.getOp() << "'";
             return nullptr;

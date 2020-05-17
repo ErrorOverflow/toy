@@ -119,8 +119,6 @@ namespace {
 
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
     using MulOpLowering = BinaryOpLowering<toy::MulOp, relay::MulOp>;
-    using BgtzOpLowering = BinaryOpLowering<toy::BgtzOp, relay::BgtzOp>;
-    using BltzOpLowering = BinaryOpLowering<toy::BltzOp, relay::BltzOp>;
     using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
     using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
     using IfOpLowering = ZeroOpLowering<toy::IfOp, relay::IfOp>;
@@ -175,6 +173,19 @@ namespace {
             Location loc = op.getLoc();
             auto indexRelay = rewriter.create<relay::IndexOp>(loc, index.getType(), name, index);
             rewriter.replaceOp(op, {indexRelay});
+            return matchSuccess();
+        }
+    };
+
+    struct BinOpLowering : public OpRewritePattern<toy::BinOp> {
+        using OpRewritePattern<toy::BinOp>::OpRewritePattern;
+
+        PatternMatchResult matchAndRewrite(toy::BinOp op,
+                                           PatternRewriter &rewriter) const final {
+            Location loc = op.getLoc();
+            auto binRelay = rewriter.create<relay::BinOp>
+                                (loc, op.lhs().getType(), op.op(), op.lhs(), op.rhs());
+            rewriter.replaceOp(op, {binRelay});
             return matchSuccess();
         }
     };
@@ -263,10 +274,10 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, MulOpLowering, ConstOpLowering,
-            SoftmaxOpLowering, BiasAddLowering, DenseLowering, BltzOpLowering, 
+            SoftmaxOpLowering, BiasAddLowering, DenseLowering, BinOpLowering, 
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             LaysersConv2dOpLowering, LaysersBatchNormOpLowering, ConvKernelLayoutOpLowering,
-            IfOpLowering, ForOpLowering, ReturnOpLowering, BgtzOpLowering, 
+            IfOpLowering, ForOpLowering, ReturnOpLowering, 
             ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the

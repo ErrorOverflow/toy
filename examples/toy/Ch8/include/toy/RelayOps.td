@@ -177,42 +177,20 @@ def MulOp : Relay_Op<"mul"> {
   >];
 }
 
-def BgtzOp : Relay_Op<"bgtz"> {
-  let summary = "element-wise multiplication operation";
-  let description = [{
-    The "bgtz" operation performs element-wise multiplication between two
-    tensors. The shapes of the tensor operands are expected to match.
-  }];
-
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+def BinOp : Relay_Op<"bin", [NoSideEffect]> {
+  let arguments = (ins StrAttr:$op, F64Tensor:$lhs, F64Tensor:$rhs);
   let results = (outs F64Tensor);
 
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildBgtzOp(b, result, lhs, rhs);
-    }]
-  >];
+    OpBuilder<"Builder *b, OperationState &result, "
+              "StringRef op, Value lhs, Value rhs", [{
+      buildBinOp(b, result, op, lhs, rhs);
+    }]>
+  ];
 }
 
-def BltzOp : Relay_Op<"bltz"> {
-  let summary = "element-wise multiplication operation";
-  let description = [{
-    The "bltz" operation performs element-wise multiplication between two
-    tensors. The shapes of the tensor operands are expected to match.
-  }];
-
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
-  let results = (outs F64Tensor);
-
-  let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildBltzOp(b, result, lhs, rhs);
-    }]
-  >];
-}
-
-def LaysersConv2dOp : Relay_Op<"layers_conv2d", [NoSideEffect]> {
-  let summary = "layers_conv2d operation";
+def LaysersConv2dOp : Relay_Op<"conv2d", [NoSideEffect]> {
+  let summary = "conv2d operation";
 
   let arguments = (ins F64Tensor:$data, F64Tensor:$channels, F64Tensor:$groups,
                     F64Tensor:$kernel_size, F64Tensor:$strides, F64Tensor:$padding,
