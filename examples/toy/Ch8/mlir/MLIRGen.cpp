@@ -258,15 +258,9 @@ namespace {
             if (!rhs)
                 return nullptr;
             auto location = loc(binop.loc());
-            // Derive the operation name from the binary operator. At the moment we only
-            // support '+' and '*'.
-            if(binop.getOp() == "+"){
-                return builder.create<AddOp>(location, lhs, rhs);
-            }
-            if(binop.getOp() == "*"){
-                return builder.create<MulOp>(location, lhs, rhs);
-            }
-            if(binop.getOp() == ">" || binop.getOp() == "<" || binop.getOp() == ">="
+            
+            if(binop.getOp() == "+" || binop.getOp() == "*" || binop.getOp() == ">" 
+                || binop.getOp() == "<" || binop.getOp() == ">="
                 || binop.getOp() == "<=" || binop.getOp() == "=="){
                 return builder.create<BinOp>(location, binop.getOp(),lhs, rhs);
             }
@@ -411,6 +405,14 @@ namespace {
 
             // Builting calls have their custom operation, meaning this is a
             // straightforward emission.
+            if (callee == "add") {
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.add "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<AddOp>(location, operands[0], operands[1]);
+            }
             if (callee == "transpose") {
                 if (call.getArgs().size() != 1) {
                     emitError(location, "MLIR codegen encountered an error: toy.transpose "
