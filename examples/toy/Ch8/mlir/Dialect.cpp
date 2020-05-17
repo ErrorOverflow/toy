@@ -287,10 +287,10 @@ static mlir::LogicalResult verify(TransposeOp op) {
 static void buildConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value data, mlir::Value channels, mlir::Value groups, 
                        mlir::Value kernel_size, mlir::Value strides, mlir::Value padding, 
-                       mlir::Value data_layout, mlir::Value kernel_layout) {
+                       mlir::Value data_layout, mlir::Value kernel_layout, mlir::Value x, mlir::Value y) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands({data, channels, groups, kernel_size, strides, padding,
-                        data_layout, kernel_layout});
+                        data_layout, kernel_layout, x, y});
 }
 
 void Conv2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }

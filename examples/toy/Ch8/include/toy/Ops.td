@@ -326,15 +326,15 @@ def Conv2dOp : Toy_Op<"conv2d",
 
   let arguments = (ins F64Tensor:$data, F64Tensor:$channels, F64Tensor:$groups,
                     F64Tensor:$kernel_size, F64Tensor:$strides, F64Tensor:$padding,
-                    F64Tensor:$data_layout, F64Tensor:$kernel_layout);
+                    F64Tensor:$data_layout, F64Tensor:$kernel_layout,  F64Tensor:$x, F64Tensor:$y);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value channels,"
                 "Value groups, Value kernel_size, Value strides, Value padding,"
-                "Value data_layout, Value kernel_layout", [{
+                "Value data_layout, Value kernel_layout, Value x, Value y", [{
       buildConv2dOp(b, result, data, channels, groups, kernel_size, strides,
-                     padding, data_layout, kernel_layout);
+                     padding, data_layout, kernel_layout, x, y);
     }]
     >
   ];

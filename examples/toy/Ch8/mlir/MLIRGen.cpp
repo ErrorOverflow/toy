@@ -432,14 +432,14 @@ namespace {
             }
 
             if (callee == "conv2d") {
-                if(call.getArgs().size() == 8){
+                if(call.getArgs().size() == 10){
                     return builder.create<Conv2dOp>(location, operands[0], operands[1],
                                 operands[2], operands[3], operands[4], operands[5], 
-                                operands[6], operands[7]);
+                                operands[6], operands[7], operands[8], operands[9]);
                 }
                 else{
                     emitError(location, "MLIR codegen encountered an error: toy.conv2d "
-                                        "just accept 8 arguments");
+                                        "just accept 10 arguments");
                     return nullptr;
                 }
             }
