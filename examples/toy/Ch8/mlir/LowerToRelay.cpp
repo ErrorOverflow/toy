@@ -120,6 +120,7 @@ namespace {
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
     using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
     using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
+    using VarLowering = BinaryOpLowering<toy::VarOp, relay::VarOp>;
     using IfOpLowering = ZeroOpLowering<toy::IfOp, relay::IfOp>;
     using ForOpLowering = ZeroOpLowering<toy::ForOp, relay::ForOp>;
     using LoopFieldOpLowering = ZeroOpLowering<toy::LoopFieldOp, relay::LoopFieldOp>;
@@ -273,7 +274,8 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, ConstOpLowering,
-            SoftmaxOpLowering, BiasAddLowering, DenseLowering, BinOpLowering, 
+            SoftmaxOpLowering, BiasAddLowering, DenseLowering, 
+            BinOpLowering, VarLowering,
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, 

@@ -405,6 +405,15 @@ namespace {
 
             // Builting calls have their custom operation, meaning this is a
             // straightforward emission.
+            if (callee == "variable") {
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.variable "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<VarOp>(location, operands[0], operands[1]);
+            }
+
             if (callee == "add") {
                 if (call.getArgs().size() != 2) {
                     emitError(location, "MLIR codegen encountered an error: toy.add "
@@ -413,6 +422,7 @@ namespace {
                 }
                 return builder.create<AddOp>(location, operands[0], operands[1]);
             }
+
             if (callee == "transpose") {
                 if (call.getArgs().size() != 1) {
                     emitError(location, "MLIR codegen encountered an error: toy.transpose "

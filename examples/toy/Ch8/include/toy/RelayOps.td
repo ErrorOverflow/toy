@@ -133,6 +133,19 @@ def ConstOp : Relay_Op<"const", [NoSideEffect]> {
   let verifier = [{ return ::verify(*this); }];
 }
 
+def VarOp : Relay_Op<"variable", [NoSideEffect]> {
+    let summary = "variable operation";
+
+    let arguments = (ins F64Tensor:$name, F64Tensor:$shape);
+    let results = (outs F64Tensor);
+
+    let builders = [
+        OpBuilder<"Builder *b, OperationState &result, Value name, Value shape", [{
+            buildVarOp(b, result, name, shape);
+        }]>
+    ];
+}
+
 def LoopFieldOp : Relay_Op<"loop_field", [NoSideEffect]> {
   let summary = "loop_field";
 }

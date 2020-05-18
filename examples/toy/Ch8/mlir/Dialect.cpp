@@ -282,6 +282,17 @@ static mlir::LogicalResult verify(TransposeOp op) {
 }
 
 //===----------------------------------------------------------------------===//
+// VarOp
+
+static void buildVarOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value name, mlir::Value shape) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({name, shape});
+}
+
+void VarOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
 // Conv2dOp
 
 static void buildConv2dOp(mlir::Builder *builder, mlir::OperationState &state,

@@ -130,6 +130,20 @@ def ConstOp : Toy_Op<"const", [NoSideEffect]> {
   ];
 }
 
+def VarOp : Toy_Op<"variable",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+    let summary = "variable operation";
+
+    let arguments = (ins F64Tensor:$name, F64Tensor:$shape);
+    let results = (outs F64Tensor);
+
+    let builders = [
+        OpBuilder<"Builder *b, OperationState &result, Value name, Value shape", [{
+            buildVarOp(b, result, name, shape);
+        }]>
+    ];
+}
+
 def LoopFieldOp : Toy_Op<"loop_field", [NoSideEffect]> {
   let summary = "loop_field";
 }
