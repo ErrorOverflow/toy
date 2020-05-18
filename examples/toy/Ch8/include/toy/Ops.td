@@ -440,6 +440,17 @@ def SoftmaxOp : Toy_Op<"softmax",
   >];
 }
 
+def ReluOp : Toy_Op<"relu", 
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let arguments = (ins F64Tensor:$input);
+  let results = (outs F64Tensor);
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value input", [{
+      buildReluOp(b, result, input);
+    }]
+  >];
+}
+
 def DenseOp : Toy_Op<"dense",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "dense operation";

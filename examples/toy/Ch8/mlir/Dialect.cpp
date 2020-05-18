@@ -370,8 +370,19 @@ static void buildSoftmaxOp(mlir::Builder *builder, mlir::OperationState &state,
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands({input});
 }
-// wrong?
+
 void SoftmaxOp::inferShapes() { getResult().setType(getOperand().getType()); }
+
+//===----------------------------------------------------------------------===//
+// ReluOp
+
+static void buildReluOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value input) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({input});
+}
+
+void ReluOp::inferShapes() { getResult().setType(getOperand().getType()); }
 
 //===----------------------------------------------------------------------===//
 // DenseOp

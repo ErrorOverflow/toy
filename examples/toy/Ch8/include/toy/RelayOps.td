@@ -413,6 +413,16 @@ def SoftmaxOp : Relay_Op<"softmax"> {
   >];
 }
 
+def ReluOp : Relay_Op<"relu"> {
+  let arguments = (ins F64Tensor:$input);
+  let results = (outs F64Tensor);
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value input", [{
+      buildReluOp(b, result, input);
+    }]
+  >];
+}
+
 def DenseOp : Relay_Op<"dense"> {
   let summary = "dense operation";
   let description = [{

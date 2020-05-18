@@ -124,6 +124,7 @@ namespace {
 
     using TransposeOpLowering = UnaryOpLowering<toy::TransposeOp, relay::TransposeOp>;
     using SoftmaxOpLowering = UnaryOpLowering<toy::SoftmaxOp, relay::SoftmaxOp>;
+    using ReluOpLowering = UnaryOpLowering<toy::ReluOp, relay::ReluOp>;
     using ReshapeOpLowering = UnaryOpLowering<toy::ReshapeOp, relay::ReshapeOp>;
     using BatchFlattenOpLowering = UnaryOpLowering<toy::BatchFlattenOp, relay::BatchFlattenOp>;
     
@@ -313,7 +314,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BoolOpLowering,
-            StringOpLowering,
+            StringOpLowering, ReluOpLowering, 
             ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the

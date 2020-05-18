@@ -241,6 +241,12 @@ static void buildSoftmaxOp(mlir::Builder *builder,
     state.addOperands(value);
 }
 
+static void buildReluOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value input) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({input});
+}
+
 static mlir::LogicalResult verify(ReturnOp op) {
     // We know that the parent operation is a function, because of the 'HasParent'
     // trait attached to the operation definition.

@@ -82,7 +82,7 @@ def main() {
     }
     var bn1 = batch_norm(body, epsilon, symbol_true, zero, zero);
     var relu1 = relu(bn1);
-    var pool2 = global_avg_pool2d(relu1);
+    var pool2 = global_avg_pool2d(relu1, NCHW);
     var flat = batch_flatten(pool2);
 
     var fc1 = dense_add_bias(flat, num_classes);

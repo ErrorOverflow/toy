@@ -541,6 +541,8 @@ namespace {
                         Bool2Relay(op);
                     else if (op_name == "relay.softmax")
                         Op2Realy(op, "relay.nn.softmax");
+                    else if (op_name == "relay.relu")
+                        Op2Realy(op, "relay.nn.relu");
                     else if (op_name == "toy.return")
                         Return2Relay(op);
                     else if (op_name == "relay.if")

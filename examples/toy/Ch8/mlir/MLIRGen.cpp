@@ -441,6 +441,15 @@ namespace {
                 return builder.create<SoftmaxOp>(location, operands[0]);
             }
 
+            if (callee == "relu") {
+                if (call.getArgs().size() != 1) {
+                    emitError(location, "MLIR codegen encountered an error: toy.relu "
+                                        "does not accept multiple arguments");
+                    return nullptr;
+                }
+                return builder.create<ReluOp>(location, operands[0]);
+            }
+
             if (callee == "conv2d") {
                 if(call.getArgs().size() == 10){
                     return builder.create<Conv2dOp>(location, operands[0], operands[1],
@@ -450,6 +459,51 @@ namespace {
                 else{
                     emitError(location, "MLIR codegen encountered an error: toy.conv2d "
                                         "just accept 10 arguments");
+                    return nullptr;
+                }
+            }
+
+            if (callee == "batch_flatten") {
+                if(call.getArgs().size() == 1){
+                    return builder.create<BatchFlattenOp>(location, operands[0]);
+                }
+                else{
+                    emitError(location, "MLIR codegen encountered an error: toy.batch_flatten "
+                                        "just accept 1 arguments");
+                    return nullptr;
+                }
+            }
+
+            if (callee == "max_pool2d") {
+                if(call.getArgs().size() == 4){
+                    return builder.create<MaxPool2dOp>(location, operands[0], operands[1],
+                                operands[2], operands[3]);
+                }
+                else{
+                    emitError(location, "MLIR codegen encountered an error: toy.max_pool2d "
+                                        "just accept 4 arguments");
+                    return nullptr;
+                }
+            }
+
+            if (callee == "global_avg_pool2d") {
+                if(call.getArgs().size() == 2){
+                    return builder.create<GlobalAvgPool2dOp>(location, operands[0], operands[1]);
+                }
+                else{
+                    emitError(location, "MLIR codegen encountered an error: toy.global_avg_pool2d "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+            }
+
+            if (callee == "dense_add_bias") {
+                if(call.getArgs().size() == 2){
+                    return builder.create<DenseBiasOp>(location, operands[0], operands[1]);
+                }
+                else{
+                    emitError(location, "MLIR codegen encountered an error: toy.dense_add_bias "
+                                        "just accept 2 arguments");
                     return nullptr;
                 }
             }
