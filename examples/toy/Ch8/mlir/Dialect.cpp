@@ -199,9 +199,9 @@ static void buildBoolOp(mlir::Builder *builder, mlir::OperationState &state,
 }
 
 static void buildStringOp(mlir::Builder *builder, mlir::OperationState &state,
-                       StringRef str) {
+                       StringRef value) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addAttribute("str", builder->getStringAttr(str));
+    state.addAttribute("value", builder->getStringAttr(value));
 }
 
 //===----------------------------------------------------------------------===//

@@ -146,6 +146,18 @@ static mlir::LogicalResult verify(ConstOp op) {
     return mlir::success();
 }
 
+static void buildBoolOp(mlir::Builder *builder, mlir::OperationState &state,
+                       StringRef value) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addAttribute("value", builder->getStringAttr(value));
+}
+
+static void buildStringOp(mlir::Builder *builder, mlir::OperationState &state,
+                       StringRef value) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addAttribute("value", builder->getStringAttr(value));
+}
+
 static void buildVarOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value name, mlir::Value shape) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));

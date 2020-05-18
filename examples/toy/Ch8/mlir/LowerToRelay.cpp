@@ -62,20 +62,6 @@ namespace {
 // ToyToAffine RewritePatterns: Binary operations
 //===----------------------------------------------------------------------===//
 
-    template<typename BinaryOp, typename LoweredBinaryOp>
-    struct BinaryOpLowering : public ConversionPattern {
-        BinaryOpLowering(MLIRContext *ctx) : ConversionPattern(BinaryOp::getOperationName(), 1, ctx) {}
-
-        PatternMatchResult matchAndRewrite(Operation *op, ArrayRef <Value> operands,
-                        ConversionPatternRewriter &rewriter) const final {
-            auto loc = op->getLoc();
-            auto type = op->getResult(0).getType();
-            auto binaryopRelay = rewriter.create<LoweredBinaryOp>(loc, type, operands[0], operands[1]);
-            rewriter.replaceOp(op, {binaryopRelay});
-            return matchSuccess();
-        }
-    };
-
     template<typename Op, typename LoweredOp>
     struct ZeroOpLowering : public ConversionPattern {
         ZeroOpLowering(MLIRContext *ctx) : ConversionPattern(Op::getOperationName(), 1, ctx) {}
@@ -97,6 +83,20 @@ namespace {
             auto type = op->getResult(0).getType();
             auto opRelay = rewriter.create<LoweredOp>(loc, type, operands[0]);
             rewriter.replaceOp(op, {opRelay});
+            return matchSuccess();
+        }
+    };
+
+    template<typename BinaryOp, typename LoweredBinaryOp>
+    struct BinaryOpLowering : public ConversionPattern {
+        BinaryOpLowering(MLIRContext *ctx) : ConversionPattern(BinaryOp::getOperationName(), 1, ctx) {}
+
+        PatternMatchResult matchAndRewrite(Operation *op, ArrayRef <Value> operands,
+                        ConversionPatternRewriter &rewriter) const final {
+            auto loc = op->getLoc();
+            auto type = op->getResult(0).getType();
+            auto binaryopRelay = rewriter.create<LoweredBinaryOp>(loc, type, operands[0], operands[1]);
+            rewriter.replaceOp(op, {binaryopRelay});
             return matchSuccess();
         }
     };
@@ -166,6 +166,32 @@ namespace {
             Location loc = op.getLoc();
             auto constRelay = rewriter.create<relay::ConstOp>(loc, constValue.getType(), data_struct, constValue);
             rewriter.replaceOp(op, {constRelay});
+            return matchSuccess();
+        }
+    };
+
+    struct BoolOpLowering : public OpRewritePattern<toy::BoolOp> {
+        using OpRewritePattern<toy::BoolOp>::OpRewritePattern;
+
+        PatternMatchResult matchAndRewrite(toy::BoolOp op,
+                                           PatternRewriter &rewriter) const final {
+            auto value = op.value();
+            Location loc = op.getLoc();
+            auto relay = rewriter.create<relay::BoolOp>(loc, value);
+            rewriter.replaceOp(op, {relay});
+            return matchSuccess();
+        }
+    };
+
+    struct StringOpLowering : public OpRewritePattern<toy::StringOp> {
+        using OpRewritePattern<toy::StringOp>::OpRewritePattern;
+
+        PatternMatchResult matchAndRewrite(toy::StringOp op,
+                                           PatternRewriter &rewriter) const final {
+            auto value = op.value();
+            Location loc = op.getLoc();
+            auto relay = rewriter.create<relay::StringOp>(loc, value);
+            rewriter.replaceOp(op, {relay});
             return matchSuccess();
         }
     };
@@ -286,7 +312,8 @@ void ToyToRelayLoweringPass::runOnFunction() {
             GlobalAvgPool2dOpLowering, DenseBiasOpLowering, MaxPool2dOpLowering,
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
-            IfOpLowering, ForOpLowering, ReturnOpLowering, 
+            IfOpLowering, ForOpLowering, ReturnOpLowering, BoolOpLowering,
+            StringOpLowering,
             ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the

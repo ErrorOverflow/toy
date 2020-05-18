@@ -386,9 +386,9 @@ def GlobalAvgPool2dOp : Toy_Op<"global_avg_pool2d",
   ];
 }
 
-def BatchNormOp : Toy_Op<"bacth_norm",
+def BatchNormOp : Toy_Op<"batch_norm",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
-  let summary = "bacth_norm operation";
+  let summary = "batch_norm operation";
 
   let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$x, F64Tensor:$y);
   let results = (outs F64Tensor);
@@ -505,12 +505,12 @@ def BoolOp : Toy_Op<"bool", [NoSideEffect]>{
 
 def StringOp : Toy_Op<"string", [NoSideEffect]>{
     let summary = "string operation";
-    let arguments = (ins StrAttr:$str);
+    let arguments = (ins StrAttr:$value);
     let results = (outs F64Tensor);    
     let builders = [
         OpBuilder<"Builder *b, OperationState &result, "
-            "StringRef str", [{
-            buildStringOp(b, result, str);
+            "StringRef value", [{
+            buildStringOp(b, result, value);
         }]>
     ];
 }

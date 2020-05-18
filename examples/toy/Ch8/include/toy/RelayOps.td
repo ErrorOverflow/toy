@@ -133,6 +133,30 @@ def ConstOp : Relay_Op<"const", [NoSideEffect]> {
   let verifier = [{ return ::verify(*this); }];
 }
 
+def BoolOp : Relay_Op<"bool", [NoSideEffect]>{
+    let summary = "bool operation";
+    let arguments = (ins StrAttr:$value);
+    let results = (outs F64Tensor);    
+    let builders = [
+        OpBuilder<"Builder *b, OperationState &result, "
+            "StringRef value", [{
+            buildBoolOp(b, result, value);
+        }]>
+    ];
+}
+
+def StringOp : Relay_Op<"string", [NoSideEffect]>{
+    let summary = "string operation";
+    let arguments = (ins StrAttr:$value);
+    let results = (outs F64Tensor);
+    let builders = [
+        OpBuilder<"Builder *b, OperationState &result, "
+            "StringRef value", [{
+            buildStringOp(b, result, value);
+        }]>
+    ];
+}
+
 def VarOp : Relay_Op<"variable", [NoSideEffect]> {
     let summary = "variable operation";
 
@@ -242,8 +266,8 @@ def GlobalAvgPool2dOp : Relay_Op<"global_avg_pool2d", [NoSideEffect]> {
   ];
 }
 
-def BatchNormOp : Relay_Op<"bacth_norm", [NoSideEffect]> {
-  let summary = "bacth_norm operation";
+def BatchNormOp : Relay_Op<"batch_norm", [NoSideEffect]> {
+  let summary = "batch_norm operation";
 
   let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$x, F64Tensor:$y);
   let results = (outs F64Tensor);

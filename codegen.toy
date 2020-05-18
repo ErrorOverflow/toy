@@ -4,8 +4,8 @@ def residual_unit(data, num_filter, stride, dim_match, name, x, y){
 	bool symbol_false = False;
 	const groups = 1;
 	const padding = (0, 0);
-	string NCHW="NCHW";
-	string OIHW="OIHW";
+	string NCHW= "NCHW";
+	string OIHW= "OIHW";
 
 	var bn1 = batch_norm(data,epsilon,symbol_true,x,y);	
 	var act1 = relu(bn1);

@@ -107,6 +107,24 @@ namespace {
             }
         };
 
+        void String2Relay(mlir::Operation &op){
+            auto string_op = mlir::dyn_cast<mlir::relay::StringOp>(&op);
+            auto str = string_op.value().str();
+            INDENT();
+            cout << getString(tmp_num) << " = \"" << str << "\"\n";
+            each_result.push_back(op.getResult(0));
+            tmp_num++;          
+        }
+
+        void Bool2Relay(mlir::Operation &op){
+            auto bool_op = mlir::dyn_cast<mlir::relay::BoolOp>(&op);
+            auto str = bool_op.value().str();
+            INDENT();
+            cout << getString(tmp_num) << " = " << str << "\n";
+            each_result.push_back(op.getResult(0));
+            tmp_num++;        
+        }
+
         void Bin2Relay(mlir::Operation &op){
             std::stringstream tmp_expr;
             auto bin_op = mlir::dyn_cast<mlir::relay::BinOp>(&op);
@@ -157,19 +175,7 @@ namespace {
             else cout << "return(" << return_var << ")\n";
         }
 
-        void Bltz2Relay(mlir::Operation &op) {
-            size_t i;
-            size_t len = each_result.size();
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            cout << "(" << getString(i + *counter);
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            cout << " < " << getString(i + *counter) << "):\n";
-            each_result.push_back(op.getResult(0));
-            tmp_num++;
-        }
-
         void If2Relay(mlir::Operation &op) {
-            // TODO:
             is_loop_field = true;
             loop_flag = 1;
             INDENT();
@@ -177,10 +183,9 @@ namespace {
         }
 
         void For2Relay(mlir::Operation &op) {
-            // TODO:
-            INDENT();
             loop_flag = 2;
             is_loop_field = true;
+            INDENT();
             std::cout << "while";
         }
 
@@ -280,6 +285,33 @@ namespace {
             tmp_num++;
         }
 
+        void BatchNorm2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << "episilon = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
+            tmp_expr << "scale = " << getString(i + *counter) << ", ";
+
+            tmp_expr << "name='%i_"<< getString(tmp_num) <<"_%i' % (";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;     
+            tmp_expr << getString(i + *counter) <<", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(4)) break;              
+            tmp_expr << getString(i + *counter) <<"))\n";
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
+
         int getDenseElement(std::vector <std::string> &result, std::stringstream &out, 
                             char leftParen, char rightParen, std::vector <uint32_t> shape, 
                             size_t n, size_t low, size_t high) {
@@ -362,6 +394,10 @@ namespace {
                         Constant2Relay(op);
                     else if (op_name == "relay.const")
                         Const2Relay(op);
+                    else if (op_name == "relay.string")
+                        String2Relay(op);
+                    else if (op_name == "relay.bool")
+                        Bool2Relay(op);
                     else if (op_name == "relay.softmax")
                         Op2Realy(op, "relay.nn.softmax");
                     else if (op_name == "toy.return")
@@ -372,16 +408,12 @@ namespace {
                         For2Relay(op);
                     else if (op_name == "relay.add")
                         Binary2Relay(op, "relay.op.add");
-                    else if (op_name == "relay.mul")
-                        Binary2Relay(op, "relay.op.multiply");
                     else if (op_name == "relay.conv1d")
                         Op2Realy(op, "relay.nn.conv1d");
                     else if (op_name == "relay.dense")
                         Op2Realy(op, "relay.nn.dense");
                     else if (op_name == "relay.bias_add")
                         Op2Realy(op, "relay.nn.bias_add");
-                    else if (op_name == "relay.bltz")
-                        Bltz2Relay(op);
                     else if (op_name == "relay.loop_field")
                         LoopField2Relay(op);
                     else if (op_name == "relay.loop_end")
@@ -390,6 +422,8 @@ namespace {
                         Index2Relay(op);
                     else if (op_name == "toy.generic_call")
                         Call2Relay(op);
+                    else if (op_name == "relay.batch_norm")
+                        BatchNorm2Relay(op, "layers.batch_norm_infer");
                 }
             }
             if(getFunction().getName() == "main"){
