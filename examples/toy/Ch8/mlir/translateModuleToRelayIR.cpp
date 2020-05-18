@@ -88,18 +88,6 @@ namespace {
             tmp_num++;
         }
 
-        void Reshape2Relay(mlir::Operation &op, std::string convert_name) {
-            INDENT();
-            std::cout << "tmp" << tmp_num << " = " << convert_name << "(";
-            size_t len = each_result.size();
-            size_t i;
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            if (i == len) std::cout << "error occured!\n";
-            else std::cout << getString(i + *counter) << ")\n";
-            each_result.push_back(op.getResult(0));
-            tmp_num++;
-        }
-
         void Binary2Relay(mlir::Operation &op, std::string convert_name) {
             std::stringstream tmp_expr;
             tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
@@ -118,6 +106,27 @@ namespace {
                 std::cout << tmp_expr.str();
             }
         };
+
+        void Bin2Relay(mlir::Operation &op){
+            std::stringstream tmp_expr;
+            auto bin_op = mlir::dyn_cast<mlir::relay::BinOp>(&op);
+            tmp_expr << getString(tmp_num) << " = ";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << getString(i + *counter);
+            tmp_expr << bin_op.op().str() << " ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << getString(i + *counter) << "\n";
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
 
         void Call2Relay(mlir::Operation &op){
             size_t p;
@@ -353,8 +362,6 @@ namespace {
                         Constant2Relay(op);
                     else if (op_name == "relay.const")
                         Const2Relay(op);
-                    else if (op_name == "relay.reshape")
-                        Reshape2Relay(op, "relay.op.reshape");
                     else if (op_name == "relay.softmax")
                         Op2Realy(op, "relay.nn.softmax");
                     else if (op_name == "toy.return")
