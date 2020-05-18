@@ -307,6 +307,28 @@ static void buildConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
 void Conv2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
+// MaxPool2dOp
+
+static void buildMaxPool2dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value pool_size, mlir::Value strides, mlir::Value padding) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, pool_size, strides, padding});
+}
+
+void MaxPool2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// GlobalAvgPool2dOp
+
+static void buildGlobalAvgPool2dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value layout) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, layout});
+}
+
+void GlobalAvgPool2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
 // ConvKernelLayoutOp
 // def conv_kernel_layout(data_layout, is_depthwise=False):
 static void buildConvKernelLayoutOp(mlir::Builder *builder, mlir::OperationState &state,
@@ -328,6 +350,17 @@ static void buildBatchNormOp(mlir::Builder *builder, mlir::OperationState &state
 }
 
 void BatchNormOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// BatchFlattenOp
+
+static void buildBatchFlattenOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data});
+}
+
+void BatchFlattenOp::inferShapes() { getResult().setType(getOperand().getType()); }
 
 //===----------------------------------------------------------------------===//
 // SoftmaxOp
@@ -361,6 +394,17 @@ static void buildBiasAddOp(mlir::Builder *builder, mlir::OperationState &state,
 }
 
 void BiasAddOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// DenseBiasOp
+
+static void buildDenseBiasOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value units) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, units});
+}
+
+void DenseBiasOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
 // TableGen'd op method definitions

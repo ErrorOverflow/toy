@@ -117,20 +117,27 @@ namespace {
         }
     };
 
-    using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
-    using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
-    using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
-    using VarLowering = BinaryOpLowering<toy::VarOp, relay::VarOp>;
     using IfOpLowering = ZeroOpLowering<toy::IfOp, relay::IfOp>;
     using ForOpLowering = ZeroOpLowering<toy::ForOp, relay::ForOp>;
     using LoopFieldOpLowering = ZeroOpLowering<toy::LoopFieldOp, relay::LoopFieldOp>;
     using LoopEndOpLowering = ZeroOpLowering<toy::LoopEndOp, relay::LoopEndOp>;
+
     using TransposeOpLowering = UnaryOpLowering<toy::TransposeOp, relay::TransposeOp>;
     using SoftmaxOpLowering = UnaryOpLowering<toy::SoftmaxOp, relay::SoftmaxOp>;
     using ReshapeOpLowering = UnaryOpLowering<toy::ReshapeOp, relay::ReshapeOp>;
+    using BatchFlattenOpLowering = UnaryOpLowering<toy::BatchFlattenOp, relay::BatchFlattenOp>;
+    
+    using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
+    using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
+    using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
+    using VarLowering = BinaryOpLowering<toy::VarOp, relay::VarOp>;
+    using GlobalAvgPool2dOpLowering = BinaryOpLowering<toy::GlobalAvgPool2dOp, relay::GlobalAvgPool2dOp>;
+    using DenseBiasOpLowering = BinaryOpLowering<toy::DenseBiasOp, relay::DenseBiasOp>;
+    
     using Conv2dOpLowering = ComplexOpLowering<toy::Conv2dOp, relay::Conv2dOp>;
     using BatchNormOpLowering = ComplexOpLowering<toy::BatchNormOp, relay::BatchNormOp>;
     using ConvKernelLayoutOpLowering = ComplexOpLowering<toy::ConvKernelLayoutOp, relay::ConvKernelLayoutOp>;
+    using MaxPool2dOpLowering = ComplexOpLowering<toy::MaxPool2dOp, relay::MaxPool2dOp>;
 
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Constant operations
@@ -275,7 +282,8 @@ void ToyToRelayLoweringPass::runOnFunction() {
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, ConstOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, 
-            BinOpLowering, VarLowering,
+            BinOpLowering, VarLowering, BatchFlattenOpLowering,
+            GlobalAvgPool2dOpLowering, DenseBiasOpLowering, MaxPool2dOpLowering,
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, 

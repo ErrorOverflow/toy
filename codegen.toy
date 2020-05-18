@@ -1,4 +1,4 @@
-def residual_unit(data, num_filter, stride, dim_match, name, bottle_neck,x,y){
+def residual_unit(data, num_filter, stride, dim_match, name, x, y){
 	const epsilon = 0.00002;
 	bool symbol_true = True;
 	bool symbol_false = False;
@@ -12,7 +12,7 @@ def residual_unit(data, num_filter, stride, dim_match, name, bottle_neck,x,y){
 	var channels1 = num_filter*0.25;
 	const kernel_size1 = (3, 3);
 	const padding1 = (1, 1);
-	var conv1 = conv2d(act1, channels1, groups, kernel_size1, stride, padding, NCHW,OIHW, x, y);
+	var conv1 = conv2d(act1, channels1, groups, kernel_size1, stride, padding, NCHW, OIHW, x, y);
 	var bn2 = batch_norm(conv1, epsilon, symbol_false, x, y);
 	var act2 = relu(bn2);
 
@@ -35,9 +35,12 @@ def main() {
 	string data_name = "data";
 	string NCHW="NCHW";
 	string OIHW="OIHW";
+    const num_stages = 4;
     const epsilon = 0.00002;
 	const zero = 0;
 	const data_shape = (1,3,224,224);
+    const num_classes = 1000;
+	bool symbol_true = True;
 	bool symbol_false = False;
     var data = variable(data_name, data_shape);
     var bn_data = batch_norm(data, epsilon, symbol_false, zero, zero);
@@ -48,7 +51,42 @@ def main() {
 	const padding1 = (3, 3);
 	const groups = 1;
 	var conv0 = conv2d(data, channels1, groups, kernel_size1, strides1, padding1, NCHW, OIHW, zero, zero);
+    
+    var bn0 = batch_norm(conv0, epsilon, symbol_true, zero, zero);
+    bn0 = relu(bn0);
+	
+    const pool_size3 = (3,3);
+    const strides3 = (2,2);
+    const padding3 = (1,1);
+    var body = max_pool2d(bn0, pool_size3, strides3, padding3);
 
-	return(data);
+    const tuple1 = (1,1);
+    const tuple2 = (2,2);
+    for(const i = 0; i < num_stages; i = i+1){
+        var stride = tuple2*1;
+        if(i==0){
+            stride = tuple1*1;
+        }
+        var filter_list_index1 = i+1;
+        var num = filter_list[filter_list_index1];
+        body = residual_unit(body, num, stride, symbol_false, i, 1000);
+
+        var j_range = units[i];
+        j_range = j_range - 1;
+        const stride2 = (1,1);
+        for(const j=0;j<j_range; j=j+1){
+            var filter_list_index2 = i+1;
+            num = filter_list[filter_list_index2];
+            body = residual_unit(body, num, stride2, symbol_true, i, j);
+        }
+    }
+    var bn1 = batch_norm(body, epsilon, symbol_true, zero, zero);
+    var relu1 = relu(bn1);
+    var pool2 = global_avg_pool2d(relu1);
+    var flat = batch_flatten(pool2);
+
+    var fc1 = dense_add_bias(flat, num_classes);
+    var net = softmax(fc1);
+    return(net);
 }
 

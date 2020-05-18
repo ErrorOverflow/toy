@@ -259,8 +259,8 @@ namespace {
                 return nullptr;
             auto location = loc(binop.loc());
             
-            if(binop.getOp() == "+" || binop.getOp() == "*" || binop.getOp() == ">" 
-                || binop.getOp() == "<" || binop.getOp() == ">="
+            if(binop.getOp() == "+" || binop.getOp() == "-" || binop.getOp() == "*" 
+                || binop.getOp() == ">" || binop.getOp() == "<" || binop.getOp() == ">="
                 || binop.getOp() == "<=" || binop.getOp() == "=="){
                 return builder.create<BinOp>(location, binop.getOp(),lhs, rhs);
             }

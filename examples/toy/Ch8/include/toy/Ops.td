@@ -354,6 +354,38 @@ def Conv2dOp : Toy_Op<"conv2d",
   ];
 }
 
+def MaxPool2dOp : Toy_Op<"max_pool2d",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "max_pool2d operation";
+
+  let arguments = (ins F64Tensor:$data, F64Tensor:$pool_size, F64Tensor:$strides,
+                    F64Tensor:$padding);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value pool_size,"
+                "Value strides, Value padding", [{
+      buildMaxPool2dOp(b, result, data, pool_size, strides, padding);
+    }]
+    >
+  ];
+}
+
+def GlobalAvgPool2dOp : Toy_Op<"global_avg_pool2d",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "global_avg_pool2d operation";
+
+  let arguments = (ins F64Tensor:$data, F64Tensor:$layout);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value layout", [{
+      buildGlobalAvgPool2dOp(b, result, data, layout);
+    }]
+    >
+  ];
+}
+
 def BatchNormOp : Toy_Op<"bacth_norm",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "bacth_norm operation";
@@ -384,6 +416,17 @@ def ConvKernelLayoutOp : Toy_Op<"conv_kernel_layout",
     }]
     >
   ];
+}
+
+def BatchFlattenOp : Toy_Op<"batch_flatten", 
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let arguments = (ins F64Tensor:$data);
+  let results = (outs F64Tensor);
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value data", [{
+      buildBatchFlattenOp(b, result, data);
+    }]
+  >];
 }
 
 def SoftmaxOp : Toy_Op<"softmax", 
@@ -427,6 +470,23 @@ def BiasAddOp : Toy_Op<"bias_add",
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
       buildBiasAddOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
+def DenseBiasOp : Toy_Op<"dense_add_bias",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "dense_add_bias operation";
+  let description = [{
+    The "dense_add_bias" operation performs element-wise addition between two tensors.
+  }];
+
+  let arguments = (ins F64Tensor:$data, F64Tensor:$units);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value units", [{
+      buildDenseBiasOp(b, result, data, units);
     }]
   >];
 }

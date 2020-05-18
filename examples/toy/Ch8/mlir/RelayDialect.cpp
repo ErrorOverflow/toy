@@ -174,6 +174,18 @@ static void buildConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
                         data_layout, kernel_layout, x, y});
 }
 
+static void buildMaxPool2dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value pool_size, mlir::Value strides, mlir::Value padding) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, pool_size, strides, padding});
+}
+
+static void buildGlobalAvgPool2dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value layout) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, layout});
+}
+
 static void buildConvKernelLayoutOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value data_layout, mlir::Value is_depthwise) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
@@ -197,6 +209,18 @@ static void buildBiasAddOp(mlir::Builder *builder, mlir::OperationState &state,
                            mlir::Value lhs, mlir::Value rhs) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands({lhs, rhs});
+}
+
+static void buildDenseBiasOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value units) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, units});
+}
+
+static void buildBatchFlattenOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data});
 }
 
 static void buildSoftmaxOp(mlir::Builder *builder,
