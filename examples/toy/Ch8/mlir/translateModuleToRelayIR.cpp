@@ -302,6 +302,147 @@ namespace {
             tmp_expr << getString(i + *counter) <<", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(4)) break;              
             tmp_expr << getString(i + *counter) <<"))\n";
+
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
+
+        void Conv2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << "channels = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
+            tmp_expr << "groups = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
+            tmp_expr << "kernel_size = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(4)) break;
+            tmp_expr << "strides = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(5)) break;
+            tmp_expr << "padding = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(6)) break;
+            tmp_expr << "data_layout = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(7)) break;
+            tmp_expr << "kernel_layout = " << getString(i + *counter) << ", ";
+
+            tmp_expr << "name='%i_"<< getString(tmp_num) <<"_%i' % (";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(8)) break;     
+            tmp_expr << getString(i + *counter) <<", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(9)) break;              
+            tmp_expr << getString(i + *counter) <<"))\n";
+
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
+
+        void MaxPool2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << "pool_size = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
+            tmp_expr << "strides = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
+            tmp_expr << "padding = " << getString(i + *counter) << ", ";
+
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
+
+        void GlobalAvgPool2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << "layout = " << getString(i + *counter) << ", ";
+
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
+
+        void ConvKernelLayout2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data_layout = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << "is_depthwise = " << getString(i + *counter) << ", ";
+
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
+
+        void BatchFlatten2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                std::cout << tmp_expr.str();
+            }
+        }
+
+        void DenseBias2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << "units = " << getString(i + *counter) << ", ";
+
             each_result.push_back(op.getResult(0));
             tmp_num++;
             if (is_loop_field) {
@@ -424,6 +565,18 @@ namespace {
                         Call2Relay(op);
                     else if (op_name == "relay.batch_norm")
                         BatchNorm2Relay(op, "layers.batch_norm_infer");
+                    else if (op_name == "relay.conv2d")
+                        Conv2Relay(op, "layers.conv2d");
+                    else if (op_name == "relay.max_pool2d")
+                        MaxPool2Relay(op, "relay.nn.max_pool2d");
+                    else if (op_name == "relay.global_avg_pool2d")
+                        GlobalAvgPool2Relay(op, "relay.nn.global_avg_pool2d");
+                    else if (op_name == "relay.conv_kernel_layout")
+                        ConvKernelLayout2Relay(op, "layers.conv_kernel_layout");
+                    else if (op_name == "relay.batch_flatten")
+                        BatchFlatten2Relay(op, "relay.nn.batch_flatten");
+                    else if (op_name == "relay.dense_add_bias")
+                        DenseBias2Relay(op, "layers.dense_add_bias");
                 }
             }
             if(getFunction().getName() == "main"){
