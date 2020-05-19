@@ -669,6 +669,8 @@ namespace toy {
                     return 20;
                 case '*':
                     return 40;
+                case '%':
+                    return 40;
                 case '<':
                     return 10;
                 case '>':

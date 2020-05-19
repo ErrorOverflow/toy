@@ -1,0 +1,53 @@
+def Conv(data, num_filter, kernel, stride, pad, name, suffix){
+    var ConvName = tuple(name, suffix);
+    const epsilon = 0.00002;
+	bool symbol_false = False;
+    const groups = 1;
+	string NCHW="NCHW";
+	string OIHW="OIHW";
+    string conv_name = "%s%s_conv1";
+    var name_conv = conv_name % ConvName;
+    var conv = conv2d(data, num_filter, groups, kernel, stride, pad, NCHW, OIHW, name_conv);
+
+    string bn_name = "%s%s_bn";
+    var name_bn = bn_name % ConvName;
+    var bn = batch_norm(conv, epsilon, symbol_false, name_bn);
+    var act = relu(bn);
+    return(act);
+}
+
+def Pooling(data, kernel, stride, pad, pool_type, name){
+    string AVG = "avg";
+    bool symbol_true = True;
+    var r = max_pool2d(data, kernel, stride, pad);
+    if(pool_type == AVG){
+        r = avg_pool2d(data, kernel, stride, pad, symbol_true);
+    }
+    return(r);
+}
+
+def Inception7A(data,
+                num_1x1,
+                num_3x3_red, num_3x3_1, num_3x3_2,
+                num_5x5_red, num_5x5,
+                pool, proj,
+                name):
+    tower_1x1 = Conv(data, num_1x1, name=('%s_conv' % name))
+    tower_5x5 = Conv(data, num_5x5_red, name=('%s_tower' % name), suffix='_conv')
+    tower_5x5 = Conv(tower_5x5, num_5x5, kernel=(5, 5), pad=(2, 2), name=('%s_tower' % name),
+                     suffix='_conv_1')
+    tower_3x3 = Conv(data, num_3x3_red, name=('%s_tower_1' % name), suffix='_conv')
+    tower_3x3 = Conv(tower_3x3, num_3x3_1, kernel=(3, 3), pad=(1, 1), name=('%s_tower_1' % name),
+                     suffix='_conv_1')
+    tower_3x3 = Conv(tower_3x3, num_3x3_2, kernel=(3, 3), pad=(1, 1), name=('%s_tower_1' % name),
+                     suffix='_conv_2')
+    pooling = Pooling(data=data, kernel=(3, 3), stride=(1, 1), pad=(1, 1), pool_type=pool,
+                      name=('%s_pool_%s_pool' % (pool, name)))
+
+    cproj = Conv(pooling, proj, name=('%s_tower_2' % name), suffix='_conv')
+    concat = relay.concatenate((tower_1x1, tower_5x5, tower_3x3, cproj), axis=1)
+    return concat
+
+def main(){
+
+}

@@ -208,25 +208,37 @@ def BinOp : Relay_Op<"bin", [NoSideEffect]> {
   ];
 }
 
+def TupleOp : Relay_Op<"tuple", [NoSideEffect]> {
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, "
+              "Value lhs, Value rhs", [{
+      buildTupleOp(b, result, lhs, rhs);
+    }]>
+  ];
+}
+
 def Conv2dOp : Relay_Op<"conv2d", [NoSideEffect]> {
   let summary = "conv2d operation";
 
   let arguments = (ins F64Tensor:$data, F64Tensor:$channels, F64Tensor:$groups,
                     F64Tensor:$kernel_size, F64Tensor:$strides, F64Tensor:$padding,
-                    F64Tensor:$data_layout, F64Tensor:$kernel_layout, F64Tensor:$x, F64Tensor:$y);
+                    F64Tensor:$data_layout, F64Tensor:$kernel_layout, F64Tensor:$name);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value channels,"
                 "Value groups, Value kernel_size, Value strides, Value padding,"
-                "Value data_layout, Value kernel_layout, Value x, Value y", [{
+                "Value data_layout, Value kernel_layout, Value name", [{
       buildConv2dOp(b, result, data, channels, groups, kernel_size, strides,
-                     padding, data_layout, kernel_layout, x, y);
+                     padding, data_layout, kernel_layout, name);
     }]
     >,
     OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
       buildConv2dOp(b, result, operands[0], operands[1], operands[2], operands[3], operands[4],
-                     operands[5], operands[6], operands[7], operands[8], operands[9]);
+                     operands[5], operands[6], operands[7], operands[8]);
     }]
     >    
   ];
@@ -269,17 +281,17 @@ def GlobalAvgPool2dOp : Relay_Op<"global_avg_pool2d", [NoSideEffect]> {
 def BatchNormOp : Relay_Op<"batch_norm", [NoSideEffect]> {
   let summary = "batch_norm operation";
 
-  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$x, F64Tensor:$y);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$name);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value epsilon,"
-                "Value scale, Value x, Value y", [{
-      buildBatchNormOp(b, result, data, epsilon, scale, x, y);
+                "Value scale, Value name", [{
+      buildBatchNormOp(b, result, data, epsilon, scale, name);
     }]
     >,
     OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
-      buildBatchNormOp(b, result, operands[0], operands[1], operands[2], operands[3], operands[4]);
+      buildBatchNormOp(b, result, operands[0], operands[1], operands[2], operands[3]);
     }]
     >
   ];
@@ -426,19 +438,23 @@ def ReluOp : Relay_Op<"relu"> {
 def DenseOp : Relay_Op<"dense"> {
   let summary = "dense operation";
   let description = [{
-    The "dense" operation performs element-wise addition between two tensors.
+    The "dense" operation performs element-wise addition among 3 tensors.
     The shapes of the tensor operands are expected to match.
   }];
 
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$weight, F64Tensor:$units);
   let results = (outs F64Tensor);
 
-  // Allow building an AddOp with from the two input operands.
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildDenseOp(b, result, lhs, rhs);
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value weight, Value units", [{
+      buildDenseOp(b, result, data, weight, units);
     }]
-  >];
+    >,
+    OpBuilder<"Builder *b, OperationState &result, std::vector<Value> &operands", [{
+      buildDenseOp(b, result, operands[0], operands[1], operands[2]);
+    }]
+    >
+  ];
 }
 
 def BiasAddOp : Relay_Op<"bias_add"> {

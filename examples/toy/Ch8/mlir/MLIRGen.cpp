@@ -261,7 +261,7 @@ namespace {
             
             if(binop.getOp() == "+" || binop.getOp() == "-" || binop.getOp() == "*" 
                 || binop.getOp() == ">" || binop.getOp() == "<" || binop.getOp() == ">="
-                || binop.getOp() == "<=" || binop.getOp() == "=="){
+                || binop.getOp() == "<=" || binop.getOp() == "==" || binop.getOp() == "%"){
                 return builder.create<BinOp>(location, binop.getOp(),lhs, rhs);
             }
             emitError(location, "invalid binary operator '") << binop.getOp() << "'";
@@ -414,6 +414,15 @@ namespace {
                 return builder.create<VarOp>(location, operands[0], operands[1]);
             }
 
+            if (callee == "tuple") {
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.variable "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<TupleOp>(location, operands[0], operands[1]);
+            }
+
             if (callee == "add") {
                 if (call.getArgs().size() != 2) {
                     emitError(location, "MLIR codegen encountered an error: toy.add "
@@ -451,14 +460,14 @@ namespace {
             }
 
             if (callee == "conv2d") {
-                if(call.getArgs().size() == 10){
+                if(call.getArgs().size() == 9){
                     return builder.create<Conv2dOp>(location, operands[0], operands[1],
                                 operands[2], operands[3], operands[4], operands[5], 
-                                operands[6], operands[7], operands[8], operands[9]);
+                                operands[6], operands[7], operands[8]);
                 }
                 else{
                     emitError(location, "MLIR codegen encountered an error: toy.conv2d "
-                                        "just accept 10 arguments");
+                                        "just accept 9 arguments");
                     return nullptr;
                 }
             }
@@ -520,24 +529,24 @@ namespace {
             }
 
             if (callee == "batch_norm") {
-                if(call.getArgs().size() == 5){
+                if(call.getArgs().size() == 4){
                     return builder.create<BatchNormOp>(location, operands[0], operands[1],
-                                operands[2], operands[3], operands[4]);
+                                operands[2], operands[3]);
                 }
                 else{
                     emitError(location, "MLIR codegen encountered an error: toy.batch_norm "
-                                        "just accept 5arguments");
+                                        "just accept 4 arguments");
                     return nullptr;
                 }
             }
 
             if (callee == "dense") {
-                if (call.getArgs().size() != 2) {
+                if (call.getArgs().size() != 3) {
                     emitError(location, "MLIR codegen encountered an error: toy.dense "
-                                        "just accept 2 arguments");
+                                        "just accept 3 arguments");
                     return nullptr;
                 }
-                return builder.create<DenseOp>(location, operands[0], operands[1]);
+                return builder.create<DenseOp>(location, operands[0], operands[1], operands[2]);
             }
 
             if (callee == "bias_add") {

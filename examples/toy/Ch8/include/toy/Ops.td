@@ -251,6 +251,18 @@ def BinOp : Toy_Op<"bin", [NoSideEffect]> {
   ];
 }
 
+def TupleOp : Toy_Op<"tuple", [NoSideEffect]> {
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, "
+              "Value lhs, Value rhs", [{
+      buildTupleOp(b, result, lhs, rhs);
+    }]>
+  ];
+}
+
 def PrintOp : Toy_Op<"print"> {
   let summary = "print operation";
   let description = [{
@@ -340,15 +352,15 @@ def Conv2dOp : Toy_Op<"conv2d",
 
   let arguments = (ins F64Tensor:$data, F64Tensor:$channels, F64Tensor:$groups,
                     F64Tensor:$kernel_size, F64Tensor:$strides, F64Tensor:$padding,
-                    F64Tensor:$data_layout, F64Tensor:$kernel_layout,  F64Tensor:$x, F64Tensor:$y);
+                    F64Tensor:$data_layout, F64Tensor:$kernel_layout,  F64Tensor:$name);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value channels,"
                 "Value groups, Value kernel_size, Value strides, Value padding,"
-                "Value data_layout, Value kernel_layout, Value x, Value y", [{
+                "Value data_layout, Value kernel_layout, Value name", [{
       buildConv2dOp(b, result, data, channels, groups, kernel_size, strides,
-                     padding, data_layout, kernel_layout, x, y);
+                     padding, data_layout, kernel_layout, name);
     }]
     >
   ];
@@ -390,13 +402,13 @@ def BatchNormOp : Toy_Op<"batch_norm",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "batch_norm operation";
 
-  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$x, F64Tensor:$y);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$epsilon, F64Tensor:$scale, F64Tensor:$name);
   let results = (outs F64Tensor);
 
   let builders = [
     OpBuilder<"Builder *b, OperationState &result, Value data, Value epsilon,"
-                "Value scale, Value x, Value y", [{
-      buildBatchNormOp(b, result, data, epsilon, scale, x, y);
+                "Value scale, Value name", [{
+      buildBatchNormOp(b, result, data, epsilon, scale, name);
     }]
     >
   ];
@@ -455,15 +467,15 @@ def DenseOp : Toy_Op<"dense",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "dense operation";
   let description = [{
-    The "dense" operation performs element-wise addition between two tensors.
+    The "dense" operation performs element-wise addition among 3 tensors.
   }];
 
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let arguments = (ins F64Tensor:$data, F64Tensor:$weight, F64Tensor:$units);
   let results = (outs F64Tensor);
 
   let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
-      buildDenseOp(b, result, lhs, rhs);
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value weight, Value units", [{
+      buildDenseOp(b, result, data, weight, units);
     }]
   >];
 }

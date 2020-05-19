@@ -214,6 +214,14 @@ static void buildBinOp(mlir::Builder *builder, mlir::OperationState &state,
 }
 
 //===----------------------------------------------------------------------===//
+// TupleOp
+static void buildTupleOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+//===----------------------------------------------------------------------===//
 // ReturnOp
 
 static mlir::LogicalResult verify(ReturnOp op) {
@@ -298,10 +306,10 @@ void VarOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 static void buildConv2dOp(mlir::Builder *builder, mlir::OperationState &state,
                        mlir::Value data, mlir::Value channels, mlir::Value groups, 
                        mlir::Value kernel_size, mlir::Value strides, mlir::Value padding, 
-                       mlir::Value data_layout, mlir::Value kernel_layout, mlir::Value x, mlir::Value y) {
+                       mlir::Value data_layout, mlir::Value kernel_layout, mlir::Value name) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands({data, channels, groups, kernel_size, strides, padding,
-                        data_layout, kernel_layout, x, y});
+                        data_layout, kernel_layout, name});
 }
 
 void Conv2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
@@ -344,9 +352,9 @@ void ConvKernelLayoutOp::inferShapes() { getResult().setType(getOperand(0).getTy
 // data = layers.batch_norm_infer(data=data, epsilon=2e-5, scale=False, name='%ibn_data%i')
 static void buildBatchNormOp(mlir::Builder *builder, mlir::OperationState &state,
                     mlir::Value data, mlir::Value epsilon, mlir::Value scale,
-                    mlir::Value x, mlir::Value y) {
+                    mlir::Value name) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({data, epsilon, scale, x, y});
+    state.addOperands({data, epsilon, scale, name});
 }
 
 void BatchNormOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
@@ -388,9 +396,9 @@ void ReluOp::inferShapes() { getResult().setType(getOperand().getType()); }
 // DenseOp
 
 static void buildDenseOp(mlir::Builder *builder, mlir::OperationState &state,
-                       mlir::Value lhs, mlir::Value rhs) {
+                       mlir::Value data, mlir::Value weight, mlir::Value units) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands({lhs, rhs});
+    state.addOperands({data, weight, units});
 }
 
 void DenseOp::inferShapes() { getResult().setType(getOperand(0).getType()); }

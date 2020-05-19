@@ -1,0 +1,132 @@
+def conv_block(data, name, channels, strides){
+    const kernel_size = (3, 3);
+    const padding = (1, 1);
+    const epsilon = 0.00001;
+    const groups = 1;
+	bool symbol_true = True;
+	bool symbol_false = False;
+    string NCHW = "NCHW";
+    var kernel_layout = conv_kernel_layout(NCHW, symbol_false);
+    string name_conv = "_conv";
+    string name_bn = "_bn";
+    var name1 = name + name_conv;
+    var conv = conv2d(data, channels, groups, kernel_size, strides, padding, NCHW, kernel_layout, name1);
+    
+    var name2 = name + name_bn;
+    var bn = batch_norm(conv, epsilon, symbol_false, name2);
+    var act = relu(bn);
+    return(act);
+}
+
+def separable_conv_block(data, name, depthwise_channels, pointwise_channels, downsample, layout){
+    const kernel_size=(3, 3);
+    const padding=(1, 1);
+    const epsilon = 0.00001;
+	bool symbol_true = True;
+	bool symbol_false = False;
+
+    const strides = (2, 2);
+    const strides_2 = (1, 1);
+    if(downsample == symbol_false){
+        strides = strides_2*1;
+    }
+
+    var kernel_layout1 = conv_kernel_layout(layout, symbol_true);
+    string name_conv1 = "_depthwise_conv1";
+    var name1 = name + name_conv1;
+    var conv1 = conv2d(data,depthwise_channels,depthwise_channels,kernel_size,strides,padding,layout,kernel_layout1,name1);
+    
+    string name_bn1 = "_bn1";
+    var name2 = name + name_bn1;
+    var bn1 = batch_norm(conv1, epsilon, symbol_false, name2);
+    var act1 = relu(bn1);
+    const groups = 1;
+    const kernel_size2 = (1,1);
+    const strides2 = (1,1);
+    const padding2 = (0,0);
+    var kernel_layout2 = conv_kernel_layout(layout, symbol_false);
+    string name_conv2 = "_conv2";
+    var name3 = name + name_conv2;
+    var conv2 = conv2d(act1, pointwise_channels, groups, kernel_size2, strides2, padding2, layout, kernel_layout2, name3);
+    
+    string name_bn2 = "_bn2";
+    var name4 = name + name_bn2;
+    var bn2 = batch_norm(conv2, epsilon, symbol_false, name4);
+    var act2 = relu(bn2);
+    return(act2);
+}
+
+def main(){
+    const num_classes=1000;
+    const data_shape=(1, 3, 224, 224);
+    const alpha=1;
+	bool symbol_true = True;
+	bool symbol_false = False;
+    string layout = "NCHW";
+
+    string data_name = "data";
+    var data = variable(data_name, data_shape);
+
+    string name_conv_block_1 = "conv_block_1";
+    var channels1 = 32 * alpha;
+    const strides1 = (2,2);
+    var body = conv_block(data, name_conv_block_1, channels1, strides1);
+
+    string name_separable_conv_block_1 = "separable_conv_block_1";
+    var depthwise_channels1 = 32 * alpha;
+    var pointwise_channels1 = 64 * alpha;
+    body = separable_conv_block(body, name_separable_conv_block_1, depthwise_channels1, pointwise_channels1, symbol_false, layout);
+    
+    string name_separable_conv_block_2 = "separable_conv_block_2";
+    var depthwise_channels2 = 64 * alpha;
+    var pointwise_channels2 = 128 * alpha;    
+    body = separable_conv_block(body, name_separable_conv_block_2, depthwise_channels2, pointwise_channels2, symbol_true, layout);
+    
+    string name_separable_conv_block_3 = "separable_conv_block_3";
+    var depthwise_channels3 = 128 * alpha;
+    var pointwise_channels3 = 128 * alpha;     
+    body = separable_conv_block(body, name_separable_conv_block_3, depthwise_channels3, pointwise_channels3, symbol_false, layout);
+    
+    string name_separable_conv_block_4 = "separable_conv_block_4";
+    var depthwise_channels4 = 128 * alpha;
+    var pointwise_channels4 = 256 * alpha;      
+    body = separable_conv_block(body, name_separable_conv_block_4, depthwise_channels4, pointwise_channels4, symbol_true, layout);
+    
+    string name_separable_conv_block_5 = "separable_conv_block_5";
+    var depthwise_channels5 = 256 * alpha;
+    var pointwise_channels5 = 256 * alpha;        
+    body = separable_conv_block(body, name_separable_conv_block_5, depthwise_channels5, pointwise_channels5, symbol_false, layout);
+    
+    string name_separable_conv_block_6 = "separable_conv_block_5";
+    var depthwise_channels6 = 256 * alpha;
+    var pointwise_channels6 = 512 * alpha;     
+    body = separable_conv_block(body, name_separable_conv_block_6, depthwise_channels6, pointwise_channels6, symbol_false, layout);
+    
+    for(const i = 7; i<12; i=i+1){
+        string name_separable_conv_block = "separable_conv_block_%d";
+        var name_separable_conv_block_i = name_separable_conv_block % i;
+        var depthwise_channelsi = 512 * alpha;
+        var pointwise_channelsi = 512 * alpha;  
+        body = separable_conv_block(body, name_separable_conv_block_i, depthwise_channelsi, pointwise_channelsi, symbol_false, layout);
+    }
+
+    string name_separable_conv_block_12 = "separable_conv_block_12";
+    var depthwise_channels12 = 512 * alpha;
+    var pointwise_channels12 = 1024 * alpha;    
+    body = separable_conv_block(body, name_separable_conv_block_12, depthwise_channels12, pointwise_channels12, symbol_true, layout);
+    
+    string name_separable_conv_block_13 = "separable_conv_block_13";
+    var depthwise_channels13 = 1024 * alpha;
+    var pointwise_channels13 = 1024 * alpha;    
+    body = separable_conv_block(body, name_separable_conv_block_13, depthwise_channels13, pointwise_channels13, symbol_false, layout);
+    
+    var pool = global_avg_pool2d(body, layout);
+    var flatten = batch_flatten(pool);
+
+    string name_none = "None";
+    string name_weight = "fc_weight";
+    var weight = variable(name_weight, name_none);
+    var fc = dense(flatten, weight, num_classes);
+    var sm = softmax(fc);
+    return(sm);
+}

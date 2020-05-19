@@ -128,13 +128,14 @@ namespace {
     using ReshapeOpLowering = UnaryOpLowering<toy::ReshapeOp, relay::ReshapeOp>;
     using BatchFlattenOpLowering = UnaryOpLowering<toy::BatchFlattenOp, relay::BatchFlattenOp>;
     
+    using TupleOpLowering = BinaryOpLowering<toy::TupleOp, relay::TupleOp>;
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
     using BiasAddLowering = BinaryOpLowering<toy::BiasAddOp, relay::BiasAddOp>;
-    using DenseLowering = BinaryOpLowering<toy::DenseOp, relay::DenseOp>;
     using VarLowering = BinaryOpLowering<toy::VarOp, relay::VarOp>;
     using GlobalAvgPool2dOpLowering = BinaryOpLowering<toy::GlobalAvgPool2dOp, relay::GlobalAvgPool2dOp>;
     using DenseBiasOpLowering = BinaryOpLowering<toy::DenseBiasOp, relay::DenseBiasOp>;
     
+    using DenseLowering = ComplexOpLowering<toy::DenseOp, relay::DenseOp>;
     using Conv2dOpLowering = ComplexOpLowering<toy::Conv2dOp, relay::Conv2dOp>;
     using BatchNormOpLowering = ComplexOpLowering<toy::BatchNormOp, relay::BatchNormOp>;
     using ConvKernelLayoutOpLowering = ComplexOpLowering<toy::ConvKernelLayoutOp, relay::ConvKernelLayoutOp>;
@@ -314,7 +315,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
             IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BoolOpLowering,
-            StringOpLowering, ReluOpLowering, 
+            StringOpLowering, ReluOpLowering, TupleOpLowering,
             ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the

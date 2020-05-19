@@ -297,11 +297,9 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
             tmp_expr << "scale = " << getString(i + *counter) << ", ";
 
-            tmp_expr << "name='%i_"<< getString(tmp_num) <<"_%i' % (";
+            tmp_expr << "name = ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;     
-            tmp_expr << getString(i + *counter) <<", ";
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(4)) break;              
-            tmp_expr << getString(i + *counter) <<"))\n";
+            tmp_expr << getString(i + *counter) << "))\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -335,11 +333,9 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(7)) break;
             tmp_expr << "kernel_layout = " << getString(i + *counter) << ", ";
 
-            tmp_expr << "name='%i_"<< getString(tmp_num) <<"_%i' % (";
+            tmp_expr << "name = ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(8)) break;     
-            tmp_expr << getString(i + *counter) <<", ";
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(9)) break;              
-            tmp_expr << getString(i + *counter) <<"))\n";
+            tmp_expr << getString(i + *counter) <<")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
