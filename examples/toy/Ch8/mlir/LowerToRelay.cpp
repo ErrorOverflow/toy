@@ -120,7 +120,8 @@ namespace {
     using IfOpLowering = ZeroOpLowering<toy::IfOp, relay::IfOp>;
     using ForOpLowering = ZeroOpLowering<toy::ForOp, relay::ForOp>;
     using LoopFieldOpLowering = ZeroOpLowering<toy::LoopFieldOp, relay::LoopFieldOp>;
-    using LoopEndOpLowering = ZeroOpLowering<toy::LoopEndOp, relay::LoopEndOp>;
+    using IfEndOpLowering = ZeroOpLowering<toy::IfEndOp, relay::IfEndOp>;
+    using WhileEndOpLowering = ZeroOpLowering<toy::WhileEndOp, relay::WhileEndOp>;
 
     using TransposeOpLowering = UnaryOpLowering<toy::TransposeOp, relay::TransposeOp>;
     using SoftmaxOpLowering = UnaryOpLowering<toy::SoftmaxOp, relay::SoftmaxOp>;
@@ -312,7 +313,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, 
             BinOpLowering, VarLowering, BatchFlattenOpLowering,
             GlobalAvgPool2dOpLowering, DenseBiasOpLowering, MaxPool2dOpLowering,
-            IndexOpLowering, LoopFieldOpLowering, LoopEndOpLowering,
+            IndexOpLowering, LoopFieldOpLowering, IfEndOpLowering, WhileEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BoolOpLowering,
             StringOpLowering, ReluOpLowering, TupleOpLowering,

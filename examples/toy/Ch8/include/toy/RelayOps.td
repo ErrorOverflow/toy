@@ -174,8 +174,12 @@ def LoopFieldOp : Relay_Op<"loop_field", [NoSideEffect]> {
   let summary = "loop_field";
 }
 
-def LoopEndOp : Relay_Op<"loop_end", [NoSideEffect]> {
-  let summary = "loop_end";
+def IfEndOp : Relay_Op<"if_end", [NoSideEffect]> {
+  let summary = "if_end";
+}
+
+def WhileEndOp : Relay_Op<"while_end", [NoSideEffect]> {
+  let summary = "while_end";
 }
 
 def AddOp : Relay_Op<"add"> {

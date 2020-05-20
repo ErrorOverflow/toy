@@ -148,8 +148,12 @@ def LoopFieldOp : Toy_Op<"loop_field", [NoSideEffect]> {
   let summary = "loop_field";
 }
 
-def LoopEndOp : Toy_Op<"loop_end", [NoSideEffect]> {
-  let summary = "loop_end";
+def WhileEndOp : Toy_Op<"while_end", [NoSideEffect]> {
+  let summary = "while_end";
+}
+
+def IfEndOp : Toy_Op<"if_end", [NoSideEffect]> {
+  let summary = "if_end";
 }
 
 

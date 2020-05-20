@@ -165,7 +165,7 @@ namespace {
                 return mlir::failure();
             if (mlir::failed(mlirGen(*ifAST.getBody())))
                 return mlir::failure();
-            builder.create<LoopEndOp>(location);
+            builder.create<IfEndOp>(location);
             return mlir::success();
         }
 
@@ -180,7 +180,7 @@ namespace {
             //TODO: error?
             if (mlir::failed(mlirGen(*forAST.getBody())))
                 return mlir::failure();
-            builder.create<LoopEndOp>(location);
+            builder.create<WhileEndOp>(location);
             return mlir::success();
         }
 

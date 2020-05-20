@@ -78,8 +78,10 @@ namespace {
                     tmp_expr << ", ";
             }
             tmp_expr << ");\n";
-            if (is_loop_field)
+            if (is_loop_field){
                 while_end.push_back(tmp_expr.str());
+                loop_flag--;
+            }
             else {
                 INDENT();
                 std::cout << tmp_expr.str();
@@ -100,6 +102,7 @@ namespace {
             each_result.push_back(op.getResult(0));
             tmp_num++;
             if (is_loop_field) {
+                loop_flag--;
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
@@ -126,24 +129,37 @@ namespace {
         }
 
         void Bin2Relay(mlir::Operation &op){
-            std::stringstream tmp_expr;
             auto bin_op = mlir::dyn_cast<mlir::relay::BinOp>(&op);
-            tmp_expr << getString(tmp_num) << " = ";
-            size_t len = each_result.size();
-            size_t i;
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << getString(i + *counter);
-            tmp_expr << bin_op.op().str() << " ";
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << getString(i + *counter) << "\n";
+            //std::cout << is_loop_field << " " << loop_flag << std::endl;
+            if (!is_loop_field || (is_loop_field && loop_flag == 2)) {
+                std::stringstream tmp_expr;
+                tmp_expr << getString(tmp_num) << " = ";
+                size_t len = each_result.size();
+                size_t i;
+                for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+                tmp_expr << getString(i + *counter) << " ";
+                tmp_expr << bin_op.op().str() << " ";
+                for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+                tmp_expr << getString(i + *counter) << "\n";
+                if(is_loop_field)
+                    while_end.push_back(tmp_expr.str());
+                else {
+                    INDENT();
+                    std::cout << tmp_expr.str();
+                }
+            } else {
+                size_t len = each_result.size();
+                size_t i;
+                for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+                std::cout << getString(i + *counter) << " ";
+                std::cout << bin_op.op().str() << " ";
+                for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+                std::cout << getString(i + *counter) << ":\n";                
+            }
+            if(is_loop_field)
+                loop_flag--;
             each_result.push_back(op.getResult(0));
             tmp_num++;
-            if (is_loop_field) {
-                while_end.push_back(tmp_expr.str());
-            } else {
-                INDENT();
-                std::cout << tmp_expr.str();
-            }
         }
 
         void Call2Relay(mlir::Operation &op){
@@ -170,8 +186,8 @@ namespace {
             std::string return_var = getString(i + *counter);
             INDENT();
             if(func_name == string("main"))
-                std::cout << "return run_infer_type(relay.Function(relay.analysis.free_vars("
-                        << return_var << ")," << return_var << "))\n";
+                std::cout << "return create_workload(relay.Function(relay.analysis.free_vars("
+                        << return_var << ")," << return_var << ")\n";
             else cout << "return(" << return_var << ")\n";
         }
 
@@ -179,14 +195,14 @@ namespace {
             is_loop_field = true;
             loop_flag = 1;
             INDENT();
-            std::cout << "if";
+            std::cout << "if ";
         }
 
         void For2Relay(mlir::Operation &op) {
-            loop_flag = 2;
+            loop_flag = 3;
             is_loop_field = true;
             INDENT();
-            std::cout << "while";
+            std::cout << "while ";
         }
 
         void Constant2Relay(mlir::Operation &op) {
@@ -262,12 +278,26 @@ namespace {
             tmp_num++;
         }
 
+        void Var2Relay(mlir::Operation &op, std::string convert_name){
+            INDENT();
+            cout << getString(tmp_num) << " = ";
+            size_t i;
+            size_t len = each_result.size();
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;            
+            cout << convert_name << "(name=" << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;            
+            cout << "shape=" << getString(i + *counter) << ")\n";            
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+        }
+
         void LoopField2Relay(mlir::Operation &op) {
             indent++;
             is_loop_field = false;
+            loop_flag = 0;
         }
 
-        void LoopEnd2Relay(mlir::Operation &op) {
+        void WhileEnd2Relay(mlir::Operation &op) {
             dumpWhileEnd();
             indent--;
         }
@@ -359,7 +389,7 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
             tmp_expr << "strides = " << getString(i + *counter) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
-            tmp_expr << "padding = " << getString(i + *counter) << ", ";
+            tmp_expr << "padding = " << getString(i + *counter) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -379,7 +409,7 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             tmp_expr << "data = " << getString(i + *counter) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "layout = " << getString(i + *counter) << ", ";
+            tmp_expr << "layout = " << getString(i + *counter) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -399,7 +429,7 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             tmp_expr << "data_layout = " << getString(i + *counter) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "is_depthwise = " << getString(i + *counter) << ", ";
+            tmp_expr << "is_depthwise = " << getString(i + *counter) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -417,7 +447,7 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            tmp_expr << "data = " << getString(i + *counter) << ")\n";
             
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -437,7 +467,7 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             tmp_expr << "data = " << getString(i + *counter) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "units = " << getString(i + *counter) << ", ";
+            tmp_expr << "units = " << getString(i + *counter) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -497,7 +527,7 @@ namespace {
 
         void INDENT() {
             for(uint32_t i = 0; i<indent; i++){
-                std::cout << "\t";
+                std::cout << "    ";
             }
         }
 
@@ -531,6 +561,8 @@ namespace {
                         Constant2Relay(op);
                     else if (op_name == "relay.const")
                         Const2Relay(op);
+                    else if (op_name == "relay.variable")
+                        Var2Relay(op, "relay.var");
                     else if (op_name == "relay.string")
                         String2Relay(op);
                     else if (op_name == "relay.bool")
@@ -547,6 +579,8 @@ namespace {
                         For2Relay(op);
                     else if (op_name == "relay.add")
                         Binary2Relay(op, "relay.op.add");
+                    else if (op_name == "relay.bin")
+                        Bin2Relay(op);
                     else if (op_name == "relay.conv1d")
                         Op2Realy(op, "relay.nn.conv1d");
                     else if (op_name == "relay.dense")
@@ -555,8 +589,10 @@ namespace {
                         Op2Realy(op, "relay.nn.bias_add");
                     else if (op_name == "relay.loop_field")
                         LoopField2Relay(op);
-                    else if (op_name == "relay.loop_end")
-                        LoopEnd2Relay(op);
+                    else if (op_name == "relay.while_end")
+                        WhileEnd2Relay(op);
+                    else if (op_name == "relay.if_end")
+                        indent--;
                     else if (op_name == "relay.index")
                         Index2Relay(op);
                     else if (op_name == "toy.generic_call")
@@ -577,19 +613,19 @@ namespace {
                         DenseBias2Relay(op, "layers.dense_add_bias");
                 }
             }
-            if(getFunction().getName() == "main"){
-                std::cout << "if __name__ == \"__main__\":\n";
-                std::cout << func_para_define << "\n";
-                std::cout << "\tfor target, ctx in ctx_list():\n"
-                        << "\t\tintrp = relay.create_executor(ctx=ctx, target=target)\n"
-                        << "\t\top_res, op_grad = intrp.evaluate(func_main())(\t\\\n\t\t\t";
-                for (uint32_t i = 0; i < num; i++) {
-                    std::cout << "data" << i;
-                    if(i==num-1) cout << ")\n";
-                    else cout << ",";
-                }
-                std::cout << std::endl;
-            }
+            // if(getFunction().getName() == "main"){
+            //     std::cout << "if __name__ == \"__main__\":\n";
+            //     std::cout << func_para_define << "\n";
+            //     std::cout << "\tfor target, ctx in ctx_list():\n"
+            //             << "\t\tintrp = relay.create_executor(ctx=ctx, target=target)\n"
+            //             << "\t\top_res, op_grad = intrp.evaluate(func_main())(\t\\\n\t\t\t";
+            //     for (uint32_t i = 0; i < num; i++) {
+            //         std::cout << "data" << i;
+            //         if(i==num-1) cout << ")\n";
+            //         else cout << ",";
+            //     }
+            //     std::cout << std::endl;
+            // }
             cout << endl;
             *counter=tmp_num;
         }
@@ -598,11 +634,9 @@ namespace {
 
 std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(
             unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter) {
-    cout << "from tvm import relay\n"
-            << "import tvm\n" 
+    cout << "import tvm\n" 
             << "import numpy as np\n"
-            << "from . import layers\n"
-            << "from tvm.contrib import graph_runtime\n";    
+            << "from . import layers\n";    
     return std::make_unique<RelayAPIPass>(hashtable, counter);
 }
 

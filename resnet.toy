@@ -1,69 +1,70 @@
 def residual_unit(data, num_filter, stride, dim_match, name){
-	const epsilon = 0.00002;
-	bool symbol_true = True;
-	bool symbol_false = False;
-	const groups = 1;
-	const padding = (0, 0);
-	string NCHW= "NCHW";
-	string OIHW= "OIHW";
+    const epsilon = 0.00002;
+    bool symbol_true = True;
+    bool symbol_false = False;
+    const groups = 1;
+    const padding = (0, 0);
+    string NCHW= "NCHW";
+    string OIHW= "OIHW";
 
     string name_bn1 = "bn1";
-	var bn1 = batch_norm(data,epsilon,symbol_true, name_bn1);	
-	var act1 = relu(bn1);
-	var channels1 = num_filter*0.25;
-	const kernel_size1 = (3, 3);
-	const padding1 = (1, 1);
+    var bn1 = batch_norm(data,epsilon,symbol_true, name_bn1);    
+    var act1 = relu(bn1);
+    var channels1 = num_filter*0.25;
+    const kernel_size1 = (3, 3);
+    const padding1 = (1, 1);
     string name_conv1 = "conv1";
-	var conv1 = conv2d(act1, channels1, groups, kernel_size1, stride, padding1, NCHW, OIHW, name_conv1);
-	
+    var conv1 = conv2d(act1, channels1, groups, kernel_size1, stride, padding1, NCHW, OIHW, name_conv1);
+    
     string name_bn2 = "bn2";
     name_bn2 = name + name_bn2;
     var bn2 = batch_norm(conv1, epsilon, symbol_false, name);
-	var act2 = relu(bn2);
+    var act2 = relu(bn2);
 
-	const kernel_size2 = (3, 3);
-	const strides2 = (1, 1);
-	const padding2 = (1, 1);
+    const kernel_size2 = (3, 3);
+    const strides2 = (1, 1);
+    const padding2 = (1, 1);
     string name_conv2 = "conv2";
-	var conv2 = conv2d(act2,num_filter,groups, kernel_size2, strides2, padding2, NCHW, OIHW, name_conv2);
+    var conv2 = conv2d(act2,num_filter,groups, kernel_size2, strides2, padding2, NCHW, OIHW, name_conv2);
 
-	var shortcut = data*1;
-	if(dim_match == symbol_false){
-    	const kernel_size3 = (1, 1);
+    var shortcut = data*1;
+    if(dim_match == symbol_false){
+        const kernel_size3 = (1, 1);
         string name_shortcut = "sc";
-		shortcut = conv2d(act1, num_filter, groups, kernel_size3, stride, padding, NCHW, OIHW, name_shortcut);
-	}
-	var r = add(conv2, shortcut);
-	return(r);
+        shortcut = conv2d(act1, num_filter, groups, kernel_size3, stride, padding, NCHW, OIHW, name_shortcut);
+    }
+    var r = add(conv2, shortcut);
+    return(r);
 }
 
 
 def main() {
-	string data_name = "data";
-	string NCHW="NCHW";
-	string OIHW="OIHW";
+    string data_name = "data";
+    string NCHW="NCHW";
+    string OIHW="OIHW";
+    const one = 1;
     const num_stages = 4;
     const epsilon = 0.00002;
-	const data_shape = (1,3,224,224);
+    const data_shape = (1,3,224,224);
     const num_classes = 1000;
-	bool symbol_true = True;
-	bool symbol_false = False;
+    bool symbol_true = True;
+    bool symbol_false = False;
     var data = variable(data_name, data_shape);
     string name_bn_data = "bn_data";
     var bn_data = batch_norm(data, epsilon, symbol_false, name_bn_data);
 
-	var channels1 = filter_list[0];
-	const kernel_size1 = (7,7);
-	const strides1 = (2,2);
-	const padding1 = (3, 3);
-	const groups = 1;
+    var channels1 = filter_list[0];
+    const kernel_size1 = (7,7);
+    const strides1 = (2,2);
+    const padding1 = (3, 3);
+    const groups = 1;
     string name_conv0 = "conv0";
-	var conv0 = conv2d(data, channels1, groups, kernel_size1, strides1, padding1, NCHW, OIHW, name_conv0);
+    var conv0 = conv2d(data, channels1, groups, kernel_size1, strides1, padding1, NCHW, OIHW, name_conv0);
     
     string name_bn0 = "bn0";
     var bn0 = batch_norm(conv0, epsilon, symbol_true, name_bn0);
     bn0 = relu(bn0);
-	
+    
     const pool_size3 = (3,3);
     const strides3 = (2,2);
     const padding3 = (1,1);
@@ -71,14 +72,16 @@ def main() {
 
     const tuple1 = (1,1);
     const tuple2 = (2,2);
-    for(const i = 0; i < num_stages; i = i+1){
-        var stride = tuple2*1;
-        if(i==0){
-            stride = tuple1*1;
+    for(const i = 0; i < num_stages; i = i+one){
+        var stride = tuple2*one;
+        const judge = 0;
+        if(i==judge){
+            stride = tuple1*one;
         }
         var filter_list_index1 = i+1;
         var num = filter_list[filter_list_index1];
-        var i_1000 = tuple(i,1000);
+        const j_max = 1000;
+        var i_1000 = tuple(i,j_max);
         string name_stage = "stage%d_unit%d";
         var name1 = name_stage % i_1000;
         body = residual_unit(body, num, stride, symbol_false, name1);
@@ -86,7 +89,7 @@ def main() {
         var j_range = units[i];
         j_range = j_range - 1;
         const stride2 = (1,1);
-        for(const j=0;j<j_range; j=j+1){
+        for(const j=0;j<j_range; j=j+one){
             var filter_list_index2 = i+1;
             num = filter_list[filter_list_index2];
             var i_j = tuple(i,j);
