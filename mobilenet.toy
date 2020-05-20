@@ -97,7 +97,7 @@ def main(){
     var pointwise_channels5 = 256 * alpha;        
     body = separable_conv_block(body, name_separable_conv_block_5, depthwise_channels5, pointwise_channels5, symbol_false, layout);
     
-    string name_separable_conv_block_6 = "separable_conv_block_5";
+    string name_separable_conv_block_6 = "separable_conv_block_6";
     var depthwise_channels6 = 256 * alpha;
     var pointwise_channels6 = 512 * alpha;     
     body = separable_conv_block(body, name_separable_conv_block_6, depthwise_channels6, pointwise_channels6, symbol_false, layout);
