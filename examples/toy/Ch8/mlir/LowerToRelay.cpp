@@ -126,8 +126,8 @@ namespace {
     using TransposeOpLowering = UnaryOpLowering<toy::TransposeOp, relay::TransposeOp>;
     using SoftmaxOpLowering = UnaryOpLowering<toy::SoftmaxOp, relay::SoftmaxOp>;
     using ReluOpLowering = UnaryOpLowering<toy::ReluOp, relay::ReluOp>;
-    using ReshapeOpLowering = UnaryOpLowering<toy::ReshapeOp, relay::ReshapeOp>;
     using BatchFlattenOpLowering = UnaryOpLowering<toy::BatchFlattenOp, relay::BatchFlattenOp>;
+    using AppendOpLowering = UnaryOpLowering<toy::AppendOp, relay::AppendOp>;
     
     using TupleOpLowering = BinaryOpLowering<toy::TupleOp, relay::TupleOp>;
     using AddOpLowering = BinaryOpLowering<toy::AddOp, relay::AddOp>;
@@ -135,6 +135,8 @@ namespace {
     using VarLowering = BinaryOpLowering<toy::VarOp, relay::VarOp>;
     using GlobalAvgPool2dOpLowering = BinaryOpLowering<toy::GlobalAvgPool2dOp, relay::GlobalAvgPool2dOp>;
     using DenseBiasOpLowering = BinaryOpLowering<toy::DenseBiasOp, relay::DenseBiasOp>;
+    using MakeTupleOpLowering = BinaryOpLowering<toy::MakeTupleOp, relay::MakeTupleOp>;
+    using ConcatenateOpLowering = BinaryOpLowering<toy::ConcatenateOp, relay::ConcatenateOp>;
     
     using DenseLowering = ComplexOpLowering<toy::DenseOp, relay::DenseOp>;
     using Conv2dOpLowering = ComplexOpLowering<toy::Conv2dOp, relay::Conv2dOp>;
@@ -310,14 +312,14 @@ void ToyToRelayLoweringPass::runOnFunction() {
     // the set of patterns that will lower the Toy operations.
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, ConstOpLowering,
-            SoftmaxOpLowering, BiasAddLowering, DenseLowering, 
+            SoftmaxOpLowering, BiasAddLowering, DenseLowering, ConcatenateOpLowering,
             BinOpLowering, VarLowering, BatchFlattenOpLowering,
             GlobalAvgPool2dOpLowering, DenseBiasOpLowering, MaxPool2dOpLowering,
             IndexOpLowering, LoopFieldOpLowering, IfEndOpLowering, WhileEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,
             IfOpLowering, ForOpLowering, ReturnOpLowering, BoolOpLowering,
-            StringOpLowering, ReluOpLowering, TupleOpLowering,
-            ReshapeOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
+            StringOpLowering, ReluOpLowering, TupleOpLowering, AppendOpLowering,
+            MakeTupleOpLowering, TransposeOpLowering, PrintOpLowering>(&getContext());
 
     // With the target and rewrite patterns defined, we can now attempt the
     // conversion. The conversion will signal failure if any of our `illegal`

@@ -330,40 +330,6 @@ def BatchFlattenOp : Relay_Op<"batch_flatten", [NoSideEffect]> {
   >];
 }
 
-def PrintOp : Relay_Op<"print"> {
-  let summary = "print operation";
-
-  let arguments = (ins F64Tensor:$input);
-  let results = (outs F64Tensor);
-
-  // Allow building a TransposeOp with from the two input operands.
-  let builders = [
-    OpBuilder<"Builder *b, OperationState &result, Value input", [{
-      buildPrintOp(b, result, input);
-    }]
-  >];
-
-  // Invoke a static verify method to verify this transpose operation.
-  let verifier = [{ return ::verify(*this); }];
-}
-
-def ReshapeOp : Relay_Op<"reshape"> {
-  let summary = "tensor reshape operation";
-  let description = [{
-    Reshape operation is transforming its input tensor into a new tensor with
-    the same number of elements but different shapes. For example:
-
-    ```mlir
-       %0 = "relay.reshape"(%arg1) : (tensor<10xf64>) -> tensor<5x2xf64>
-    ```
-  }];
-
-  let arguments = (ins F64Tensor:$input);
-
-  // We expect that the reshape operation returns a statically shaped tensor.
-  let results = (outs StaticShapeTensorOf<[F64]>);
-}
-
 def ReturnOp : Relay_Op<"return", [Terminator, HasParent<"FuncOp">]> {
   let summary = "return operation";
   let description = [{
@@ -519,4 +485,44 @@ def IndexOp : Relay_Op<"index", [NoSideEffect]> {
     }]>
   ];
 }
+
+def MakeTupleOp : Relay_Op<"make_tuple"> {
+  let summary = "make_tuple operation";
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildMakeTupleOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
+def AppendOp : Relay_Op<"append"> {
+  let summary = "append operation";
+
+  let arguments = (ins F64Tensor:$value);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value value", [{
+      buildAppendOp(b, result, value);
+    }]
+  >];
+}
+
+def ConcatenateOp : Relay_Op<"concatenate"> {
+  let summary = "concatenate operation";
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildConcatenateOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
 #endif // Relay_OpS

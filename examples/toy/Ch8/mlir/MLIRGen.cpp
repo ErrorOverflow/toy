@@ -558,6 +558,33 @@ namespace {
                 return builder.create<BiasAddOp>(location, operands[0], operands[1]);
             }
 
+            if (callee == "make_tuple"){
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.make_tuple "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<MakeTupleOp>(location, operands[0], operands[1]);                    
+            }
+
+            if (callee == "append"){
+                if (call.getArgs().size() != 1) {
+                    emitError(location, "MLIR codegen encountered an error: toy.append "
+                                        "just accept 1 arguments");
+                    return nullptr;
+                }
+                return builder.create<AppendOp>(location, operands[0]);                    
+            }
+
+            if (callee == "concatenate"){
+                if (call.getArgs().size() != 2) {
+                    emitError(location, "MLIR codegen encountered an error: toy.concatenate "
+                                        "just accept 2 arguments");
+                    return nullptr;
+                }
+                return builder.create<ConcatenateOp>(location, operands[0], operands[1]);                    
+            }
+
             // Otherwise this is a call to a user-defined function. Calls to ser-defined
             // functions are mapped to a custom call that takes the callee name as an
             // attribute.

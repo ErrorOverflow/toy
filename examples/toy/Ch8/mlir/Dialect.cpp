@@ -426,6 +426,37 @@ static void buildDenseBiasOp(mlir::Builder *builder, mlir::OperationState &state
 void DenseBiasOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
+// MakeTupleOp
+
+static void buildMakeTupleOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+void MakeTupleOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
+// AppendOp
+
+static void buildAppendOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value value) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({value});
+}
+
+//===----------------------------------------------------------------------===//
+// ConcatenateOp
+
+static void buildConcatenateOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+void ConcatenateOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
 // TableGen'd op method definitions
 //===----------------------------------------------------------------------===//
 

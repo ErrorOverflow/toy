@@ -309,33 +309,32 @@ static mlir::LogicalResult verify(TransposeOp op) {
     return mlir::success();
 }
 
-static void buildPrintOp(mlir::Builder *builder,
-                         mlir::OperationState &state, mlir::Value value) {
-    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
-    state.addOperands(value);
-}
-
-static mlir::LogicalResult verify(PrintOp op) {
-    auto inputType = op.getOperand().getType().dyn_cast<RankedTensorType>();
-    auto resultType = op.getType().dyn_cast<RankedTensorType>();
-    if (!inputType || !resultType)
-        return mlir::success();
-
-    auto inputShape = inputType.getShape();
-    if (!std::equal(inputShape.begin(), inputShape.end(),
-                    resultType.getShape().rbegin())) {
-        return op.emitError()
-                << "expected result shape to be a print of the input";
-    }
-    return mlir::success();
-}
-
 static void buildIndexOp(mlir::Builder *builder, mlir::OperationState &state,
                        StringRef name, mlir::Value index) {
     state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
     state.addOperands(index);
     state.addAttribute("name", builder->getStringAttr(name));
 }
+
+static void buildMakeTupleOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+static void buildAppendOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value value) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({value});
+}
+
+static void buildConcatenateOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value lhs, mlir::Value rhs) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({lhs, rhs});
+}
+
+
 //===----------------------------------------------------------------------===//
 // TableGen'd op method definitions
 //===----------------------------------------------------------------------===//

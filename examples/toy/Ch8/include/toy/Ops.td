@@ -556,4 +556,46 @@ def ForOp : Toy_Op<"for", [NoSideEffect]>{
     }];
 }
 
+def MakeTupleOp : Toy_Op<"make_tuple",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "make_tuple operation";
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildMakeTupleOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
+def AppendOp : Toy_Op<"append",
+    [NoSideEffect]> {
+  let summary = "append operation";
+
+  let arguments = (ins F64Tensor:$value);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value value", [{
+      buildAppendOp(b, result, value);
+    }]
+  >];
+}
+
+def ConcatenateOp : Toy_Op<"concatenate",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "concatenate operation";
+
+  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value lhs, Value rhs", [{
+      buildConcatenateOp(b, result, lhs, rhs);
+    }]
+  >];
+}
+
 #endif // TOY_OPS
