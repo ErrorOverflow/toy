@@ -38,7 +38,8 @@ namespace toy {
     class Parser {
     public:
         /// Create a Parser for the supplied lexer.
-        Parser(Lexer &lexer) : lexer(lexer) {}
+        Parser(Lexer &lexer, std::vector <std::string> &func_name_list) : 
+                lexer(lexer), func_name_list(func_name_list) {}
 
         /// Parse a full Module. A module is a list of function definitions.
         std::unique_ptr <ModuleAST> parseModule() {
@@ -59,6 +60,7 @@ namespace toy {
 
     private:
         Lexer &lexer;
+        std::vector <std::string> &func_name_list;
         bool isConst = false;
         bool isJudge = false;
         /// Parse a if block.
@@ -611,6 +613,7 @@ namespace toy {
                 return parseError<PrototypeAST>("function name", "in prototype");
 
             std::string fnName(lexer.getId());
+            func_name_list.push_back(fnName);
             lexer.consume(tok_identifier);
 
             if (lexer.getCurToken() != '(')

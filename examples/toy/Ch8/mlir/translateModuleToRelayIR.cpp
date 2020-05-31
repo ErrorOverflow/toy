@@ -526,7 +526,10 @@ namespace {
 
         void stream2file(std::stringstream &out){
             std::ofstream outfile;
-            outfile.open("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py", std::ios::app);
+            string outfile_name = string("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out_");
+            outfile_name += func_name;
+            outfile_name += ".py";
+            outfile.open(outfile_name, std::ios::app);
             outfile << out.str();
             //cout << out.str();
             outfile.flush();
@@ -560,6 +563,15 @@ namespace {
         }
 
         void FuncBuild() {
+            std::ofstream outfile;
+            string outfile_name = string("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out_");
+            outfile_name += func_name;
+            outfile_name += ".py";
+            outfile.open(outfile_name, std::ios::out);
+            outfile << "\n";
+            outfile.flush();
+            outfile.close();
+
             std::stringstream tmp_expr;
             string s = string("func_");
             s += func_name;
@@ -704,6 +716,7 @@ std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(
     outfile << "import tvm\n" 
             << "import numpy as np\n"
             << "from . import layers\n";
+    outfile.flush();
     outfile.close();
     return std::make_unique<RelayAPIPass>(hashtable, counter);
 }

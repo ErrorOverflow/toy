@@ -21,6 +21,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <sstream>
+#include <fstream>
 #include "toy/Dialect.h"
 #include "toy/MLIRGen.h"
 #include "toy/Parser.h"
@@ -98,7 +100,8 @@ static cl::opt<enum Action> emitAction(
 static cl::opt<bool> EnableOpt("opt", cl::desc("Enable optimizations"));
 
 /// Returns a Toy AST resulting from parsing the file or a nullptr on error.
-std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
+std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename,
+                        std::vector <std::string> &func_name_list) {
     llvm::ErrorOr <std::unique_ptr<llvm::MemoryBuffer>> FileOrErr =
             llvm::MemoryBuffer::getFileOrSTDIN(filename);
     if (std::error_code EC = FileOrErr.getError()) {
@@ -107,16 +110,17 @@ std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
     }
     auto buffer = FileOrErr.get()->getBuffer();
     LexerBuffer lexer(buffer.begin(), buffer.end(), std::string(filename));
-    Parser parser(lexer);
+    Parser parser(lexer, func_name_list);
     return parser.parseModule();
 }
 
 int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, 
-            unordered_map <uint32_t, std::string> &hashtable) {
+            unordered_map <uint32_t, std::string> &hashtable,
+            std::vector <std::string> &func_name_list) {
     // Handle '.toy' input to the compiler.
     if (inputType != InputType::MLIR &&
         !llvm::StringRef(inputFilename).endswith(".mlir")) {
-        auto moduleAST = parseInputFile(inputFilename);
+        auto moduleAST = parseInputFile(inputFilename, func_name_list);
         module = mlirGen(context, *moduleAST, hashtable);
         return !module ? 1 : 0;
     }
@@ -141,8 +145,9 @@ int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module,
 
 int loadAndProcessMLIR(mlir::MLIRContext &context,
                        mlir::OwningModuleRef &module, 
-                       unordered_map <uint32_t, std::string> &hashtable) {
-    if (int error = loadMLIR(context, module, hashtable))
+                       std::unordered_map <uint32_t, std::string> &hashtable,
+                       std::vector <std::string> &func_name_list) {
+    if (int error = loadMLIR(context, module, hashtable, func_name_list))
         return error;
     mlir::PassManager pm(&context);
     // Apply any generic pass manager command line options and run the pipeline.
@@ -197,8 +202,8 @@ int dumpAST() {
         llvm::errs() << "Can't dump a Toy AST when the input is MLIR\n";
         return 5;
     }
-
-    auto moduleAST = parseInputFile(inputFilename);
+    std::vector<std::string> s;
+    auto moduleAST = parseInputFile(inputFilename, s);
     if (!moduleAST)
         return 1;
 
@@ -259,8 +264,8 @@ int runJit(mlir::ModuleOp module) {
 int main(int argc, char **argv) {
     mlir::registerPassManagerCLOptions();
     cl::ParseCommandLineOptions(argc, argv, "toy compiler\n");
-    unordered_map <uint32_t, std::string> ssa_hashtable;
-
+    std::unordered_map <uint32_t, std::string> ssa_hashtable;
+    std::vector <std::string> func_name_list;
     if (emitAction == Action::DumpAST)
         return dumpAST();
 
@@ -272,7 +277,7 @@ int main(int argc, char **argv) {
 
     mlir::MLIRContext context;
     mlir::OwningModuleRef module;
-    if (int error = loadAndProcessMLIR(context, module, ssa_hashtable))
+    if (int error = loadAndProcessMLIR(context, module, ssa_hashtable, func_name_list))
         return error;
 
     // If we aren't exporting to non-mlir, then we are done.
@@ -288,6 +293,22 @@ int main(int argc, char **argv) {
     // Otherwise, we must be running the jit.
     if (emitAction == Action::RunJIT)
         return runJit(*module);
+
+    std::string outfile_name = std::string("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py");
+    std::ofstream outfile;
+    outfile.open(outfile_name, std::ios::app);
+    for(auto fnName : func_name_list){
+        std::ifstream infile;
+        std::string infile_name = std::string("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out_");
+        infile_name += fnName;
+        infile_name += ".py";
+        infile.open(infile_name);
+    
+        outfile << infile.rdbuf();
+        outfile.flush();
+        infile.close();
+    }
+    outfile.close();
 
     //llvm::errs() << "No action specified (parsing only?), use -emit=<action>\n";
     return -1;
