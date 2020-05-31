@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <unordered_map>
 
 #include "mlir/Analysis/Verifier.h"
@@ -63,7 +64,6 @@ namespace {
         std::vector <mlir::Value> each_result;
         std::vector <std::string> while_end;
         std::vector <uint32_t> loop_round;
-
         unordered_map <uint32_t, std::string> &hashtable;
 
         void Op2Realy(mlir::Operation &op, std::string convert_name){
@@ -77,14 +77,14 @@ namespace {
                 if(i != op.getNumOperands()-1)
                     tmp_expr << ", ";
             }
-            tmp_expr << ");\n";
+            tmp_expr << ")\n";
             if (is_loop_field){
                 while_end.push_back(tmp_expr.str());
                 loop_flag--;
             }
             else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -106,33 +106,37 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
         };
 
         void String2Relay(mlir::Operation &op){
             auto string_op = mlir::dyn_cast<mlir::relay::StringOp>(&op);
+            std::stringstream tmp_expr;
             auto str = string_op.value().str();
             INDENT();
-            cout << getString(tmp_num) << " = \"" << str << "\"\n";
+            tmp_expr << getString(tmp_num) << " = \"" << str << "\"\n";
+            stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++;          
         }
 
         void Bool2Relay(mlir::Operation &op){
             auto bool_op = mlir::dyn_cast<mlir::relay::BoolOp>(&op);
+            std::stringstream tmp_expr;
             auto str = bool_op.value().str();
             INDENT();
-            cout << getString(tmp_num) << " = " << str << "\n";
+            tmp_expr << getString(tmp_num) << " = " << str << "\n";
+            stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++;        
         }
 
         void Bin2Relay(mlir::Operation &op){
             auto bin_op = mlir::dyn_cast<mlir::relay::BinOp>(&op);
+            std::stringstream tmp_expr;
             //std::cout << is_loop_field << " " << loop_flag << std::endl;
             if (!is_loop_field || (is_loop_field && loop_flag == 2)) {
-                std::stringstream tmp_expr;
                 tmp_expr << getString(tmp_num) << " = ";
                 size_t len = each_result.size();
                 size_t i;
@@ -145,16 +149,17 @@ namespace {
                     while_end.push_back(tmp_expr.str());
                 else {
                     INDENT();
-                    std::cout << tmp_expr.str();
+                    stream2file(tmp_expr);
                 }
             } else {
                 size_t len = each_result.size();
                 size_t i;
                 for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-                std::cout << getString(i + *counter) << " ";
-                std::cout << bin_op.op().str() << " ";
+                tmp_expr << getString(i + *counter) << " ";
+                tmp_expr << bin_op.op().str() << " ";
                 for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-                std::cout << getString(i + *counter) << ":\n";                
+                tmp_expr << getString(i + *counter) << ":\n"; 
+                stream2file(tmp_expr);               
             }
             if(is_loop_field)
                 loop_flag--;
@@ -166,15 +171,17 @@ namespace {
             size_t p;
             size_t len = each_result.size();
             auto call_op = mlir::dyn_cast<mlir::toy::GenericCallOp>(&op);
+            std::stringstream tmp_expr;
             INDENT();
-            cout << getString(tmp_num) << " = func_" << call_op.callee().getRootReference().str() <<"(";
+            tmp_expr << getString(tmp_num) << " = func_" << call_op.callee().getRootReference().str() <<"(";
             for(uint32_t i = 0; i < op.getNumOperands(); i++){
                 for (p = 0; p < len; p++) if (each_result[p] == op.getOperand(i)) break;
-                cout << getString(p + *counter);
+                tmp_expr << getString(p + *counter);
                 if(i != op.getNumOperands()-1)
-                    cout << ",";
+                    tmp_expr << ",";
             }
-            cout << ");\n";
+            tmp_expr << ")\n";
+            stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -182,31 +189,38 @@ namespace {
         void Return2Relay(mlir::Operation &op) {
             size_t i;
             size_t len = each_result.size();
+            std::stringstream tmp_expr;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             std::string return_var = getString(i + *counter);
             INDENT();
             if(func_name == string("main"))
-                std::cout << "return create_workload(relay.Function(relay.analysis.free_vars("
+                tmp_expr << "return create_workload(relay.Function(relay.analysis.free_vars("
                         << return_var << ")," << return_var << ")\n";
-            else cout << "return(" << return_var << ")\n";
+            else tmp_expr << "return(" << return_var << ")\n";
+            stream2file(tmp_expr);
         }
 
         void If2Relay(mlir::Operation &op) {
+            std::stringstream tmp_expr;
             is_loop_field = true;
             loop_flag = 1;
             INDENT();
-            std::cout << "if ";
+            tmp_expr << "if ";
+            stream2file(tmp_expr);
         }
 
         void For2Relay(mlir::Operation &op) {
+            std::stringstream tmp_expr;
             loop_flag = 3;
             is_loop_field = true;
             INDENT();
-            std::cout << "while ";
+            tmp_expr << "while ";
+            stream2file(tmp_expr);
         }
 
         void Constant2Relay(mlir::Operation &op) {
             auto constantop = mlir::dyn_cast<mlir::relay::ConstantOp>(&op);
+            std::stringstream tmp_expr;
             auto constantValue = constantop.value();
             auto valueIt = constantValue.getValues<double>().begin();
             mlir::Operation *oop = constantop;
@@ -215,13 +229,14 @@ namespace {
             uint32_t dataNum = 1;
             std::vector <uint32_t> shape_vector;
             INDENT();
-            std::cout << "var" << num << " = relay.var(\"var" << num << "\",shape=(";
+            tmp_expr << "var" << num << " = relay.var(\"var" << num << "\",shape=(";
             for (size_t i = 0; i < shape.size(); i++) {
-                if (i != shape.size() - 1) std::cout << shape[i] << ",";
-                else std::cout << shape[i] << "), dtype=\"float64\")\n";
+                if (i != shape.size() - 1) tmp_expr << shape[i] << ",";
+                else tmp_expr << shape[i] << "), dtype=\"float64\")\n";
                 dataNum *= shape[i];
                 shape_vector.push_back(shape[i]);
             }
+            stream2file(tmp_expr);
             std::stringstream tmp_para_define;
             tmp_para_define << std::string("\tdata") << num << std::string(" = ");
             std::vector<double> data;
@@ -234,6 +249,7 @@ namespace {
             }
             getDenseElement(result, tmp_para_define, '[', ']',shape_vector, 0, 0, result.size());
             func_para_define.append(tmp_para_define.str().append(";\n"));
+            // TODO:
             each_result.push_back(oop->getResult(0));
             num++;
             tmp_num++;
@@ -241,6 +257,7 @@ namespace {
 
         void Const2Relay(mlir::Operation &op) {
             auto constop = mlir::dyn_cast<mlir::relay::ConstOp>(&op);
+            std::stringstream tmp_expr;
             auto valueIt = constop.value().getValues<double>().begin();
             mlir::Operation *oop = constop;
             auto tensorType = (*oop->result_type_begin()).cast<mlir::TensorType>();
@@ -273,20 +290,23 @@ namespace {
                 rightParen = ')';                
             }
             getDenseElement(result, tmp_para_define, leftParen, rightParen, shape_vector, 0, 0, result.size());
-            cout << tmp_para_define.str() << ";\n";
+            tmp_expr << tmp_para_define.str() << "\n";
+            stream2file(tmp_expr);
             each_result.push_back(oop->getResult(0));
             tmp_num++;
         }
 
         void Var2Relay(mlir::Operation &op, std::string convert_name){
             INDENT();
-            cout << getString(tmp_num) << " = ";
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = ";
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;            
-            cout << convert_name << "(name=" << getString(i + *counter) << ", ";
+            tmp_expr << convert_name << "(name=" << getString(i + *counter) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;            
-            cout << "shape=" << getString(i + *counter) << ")\n";            
+            tmp_expr << "shape=" << getString(i + *counter) << ")\n";
+            stream2file(tmp_expr);        
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -304,13 +324,15 @@ namespace {
 
         void Index2Relay(mlir::Operation &op){
             auto indexop = mlir::dyn_cast<mlir::relay::IndexOp>(&op);
+            std::stringstream tmp_expr;
             auto name = indexop.name();
             INDENT();
-            cout << getString(tmp_num) << " = ";
+            tmp_expr << getString(tmp_num) << " = ";
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;            
-            cout << name.str() << "[" << getString(i + *counter) << "];\n";
+            tmp_expr << name.str() << "[" << getString(i + *counter) << "]\n";
+            stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -337,7 +359,7 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
         }
 
@@ -373,7 +395,7 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
         }
 
@@ -397,7 +419,7 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
         }
 
@@ -417,7 +439,7 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
         }
 
@@ -437,7 +459,7 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
         }
 
@@ -455,7 +477,7 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
         }
 
@@ -475,8 +497,40 @@ namespace {
                 while_end.push_back(tmp_expr.str());
             } else {
                 INDENT();
-                std::cout << tmp_expr.str();
+                stream2file(tmp_expr);
             }
+        }
+
+        void Tuple2Relay(mlir::Operation &op){
+            std::stringstream tmp_expr;
+            INDENT();
+            tmp_expr << getString(tmp_num) << " = ";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "(" << getString(i + *counter) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << getString(i + *counter) << ")\n";
+            stream2file(tmp_expr);
+            each_result.push_back(op.getResult(0));
+            tmp_num++; 
+        }
+
+        void MakeTuple2Relay(mlir::Operation &op){
+
+        }
+
+        void Append2Relay(mlir::Operation &op){
+
+        }
+
+        void stream2file(std::stringstream &out){
+            std::ofstream outfile;
+            outfile.open("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py", std::ios::app);
+            outfile << out.str();
+            //cout << out.str();
+            outfile.flush();
+            outfile.close();
         }
 
         int getDenseElement(std::vector <std::string> &result, std::stringstream &out, 
@@ -506,29 +560,35 @@ namespace {
         }
 
         void FuncBuild() {
+            std::stringstream tmp_expr;
             string s = string("func_");
             s += func_name;
-            std::cout << "def ";
-            std::cout << s << "(";
+            tmp_expr << "def ";
+            tmp_expr << s << "(";
             auto configs = getFunction().getArguments();
             for(auto arg : configs){
                 each_result.push_back(arg);
-                cout << getString(tmp_num++);
-                if(arg != configs.back()) cout << ", ";
+                tmp_expr << getString(tmp_num++);
+                if(arg != configs.back()) tmp_expr << ", ";
             }
-            cout << "):\n";
+            tmp_expr << "):\n";
+            stream2file(tmp_expr);
         }
 
         void dumpWhileEnd(){
             INDENT();
-            cout << while_end.back();
+            std::stringstream tmp_expr;
+            tmp_expr << while_end.back();
+            stream2file(tmp_expr);
             while_end.pop_back();
         }
 
         void INDENT() {
+            std::stringstream tmp_expr;
             for(uint32_t i = 0; i<indent; i++){
-                std::cout << "    ";
+                tmp_expr << "    ";
             }
+            stream2file(tmp_expr);
         }
 
         void runOnFunctionInitial(){
@@ -611,6 +671,12 @@ namespace {
                         BatchFlatten2Relay(op, "relay.nn.batch_flatten");
                     else if (op_name == "relay.dense_add_bias")
                         DenseBias2Relay(op, "layers.dense_add_bias");
+                    else if (op_name == "relay.make_tuple")
+                        MakeTuple2Relay(op);
+                    else if (op_name == "relay.append")
+                        Append2Relay(op);
+                    else if (op_name == "relay.tuple")
+                        Tuple2Relay(op);                    
                 }
             }
             // if(getFunction().getName() == "main"){
@@ -626,7 +692,6 @@ namespace {
             //     }
             //     std::cout << std::endl;
             // }
-            cout << endl;
             *counter=tmp_num;
         }
     };
@@ -634,9 +699,12 @@ namespace {
 
 std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(
             unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter) {
-    cout << "import tvm\n" 
+    std::ofstream outfile;
+    outfile.open("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py", std::ios::out);
+    outfile << "import tvm\n" 
             << "import numpy as np\n"
             << "from . import layers\n";    
+    outfile.close();
     return std::make_unique<RelayAPIPass>(hashtable, counter);
 }
 
