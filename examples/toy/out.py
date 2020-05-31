@@ -65,7 +65,7 @@ def func_main():
     act2 = (3.000000,3.000000)
     kernel_size2 = (2.000000,2.000000)
     strides2 = (1.000000,1.000000)
-    padding2 = relay.nn.max_pool2d(data = bn0, pool_size = pool_size3, strides = strides3, padding = padding3)
+    padding2 = relay.nn.max_pool2d(data = name_bn2, pool_size = act2, strides = kernel_size2, padding = strides2)
     name_conv2 = (1.000000,1.000000)
     conv2 = (2.000000,2.000000)
     tmp1 = 0.000000

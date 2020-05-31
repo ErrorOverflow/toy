@@ -23,6 +23,7 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <cstdio> 
 #include "toy/Dialect.h"
 #include "toy/MLIRGen.h"
 #include "toy/Parser.h"
@@ -52,7 +53,6 @@
 #include "llvm/Support/raw_ostream.h"
 
 using namespace toy;
-using std::unordered_map;
 namespace cl = llvm::cl;
 
 static cl::opt <std::string> inputFilename(cl::Positional,
@@ -115,7 +115,7 @@ std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename,
 }
 
 int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, 
-            unordered_map <uint32_t, std::string> &hashtable,
+            std::unordered_map <uint32_t, std::string> &hashtable,
             std::vector <std::string> &func_name_list) {
     // Handle '.toy' input to the compiler.
     if (inputType != InputType::MLIR &&
@@ -307,6 +307,7 @@ int main(int argc, char **argv) {
         outfile << infile.rdbuf();
         outfile.flush();
         infile.close();
+        std::remove(infile_name.c_str());
     }
     outfile.close();
 
