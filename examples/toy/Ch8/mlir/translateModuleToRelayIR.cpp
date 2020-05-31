@@ -159,7 +159,7 @@ namespace {
                 tmp_expr << bin_op.op().str() << " ";
                 for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
                 tmp_expr << getString(i + *counter) << ":\n"; 
-                stream2file(tmp_expr);               
+                stream2file(tmp_expr);
             }
             if(is_loop_field)
                 loop_flag--;
@@ -287,7 +287,7 @@ namespace {
                 rightParen = ']';
             } else if(data_struct == "tuple"){
                 leftParen = '(';
-                rightParen = ')';                
+                rightParen = ')';   
             }
             getDenseElement(result, tmp_para_define, leftParen, rightParen, shape_vector, 0, 0, result.size());
             tmp_expr << tmp_para_define.str() << "\n";
@@ -302,11 +302,11 @@ namespace {
             tmp_expr << getString(tmp_num) << " = ";
             size_t i;
             size_t len = each_result.size();
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;            
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             tmp_expr << convert_name << "(name=" << getString(i + *counter) << ", ";
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;            
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
             tmp_expr << "shape=" << getString(i + *counter) << ")\n";
-            stream2file(tmp_expr);        
+            stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
@@ -330,7 +330,7 @@ namespace {
             tmp_expr << getString(tmp_num) << " = ";
             size_t i;
             size_t len = each_result.size();
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;            
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             tmp_expr << name.str() << "[" << getString(i + *counter) << "]\n";
             stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
@@ -350,7 +350,7 @@ namespace {
             tmp_expr << "scale = " << getString(i + *counter) << ", ";
 
             tmp_expr << "name = ";
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;     
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
             tmp_expr << getString(i + *counter) << "))\n";
 
             each_result.push_back(op.getResult(0));
@@ -386,7 +386,7 @@ namespace {
             tmp_expr << "kernel_layout = " << getString(i + *counter) << ", ";
 
             tmp_expr << "name = ";
-            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(8)) break;     
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(8)) break;
             tmp_expr << getString(i + *counter) <<")\n";
 
             each_result.push_back(op.getResult(0));
@@ -676,7 +676,7 @@ namespace {
                     else if (op_name == "relay.append")
                         Append2Relay(op);
                     else if (op_name == "relay.tuple")
-                        Tuple2Relay(op);                    
+                        Tuple2Relay(op);
                 }
             }
             // if(getFunction().getName() == "main"){
@@ -703,7 +703,7 @@ std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(
     outfile.open("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py", std::ios::out);
     outfile << "import tvm\n" 
             << "import numpy as np\n"
-            << "from . import layers\n";    
+            << "from . import layers\n";
     outfile.close();
     return std::make_unique<RelayAPIPass>(hashtable, counter);
 }
