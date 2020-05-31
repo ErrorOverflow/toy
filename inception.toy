@@ -196,7 +196,7 @@ def Inception7D(data,num_3x3_red, num_3x3,num_d7_3x3_red, num_d7_1, num_d7_2, nu
     tower_3x3 = Conv(tower_3x3, num_3x3, kernel_2, stride_2, pad_2, name_1, suffix_2);
 
     string s_tower_1 = "%s_tower_1";
-    var name_3 = s_tower % name;
+    var name_3 = s_tower_1 % name;
     string suffix_3 = "_conv";    
     var tower_d7_3x3 = Conv(data, num_d7_3x3_red, kernel, stride, pad, name_3, suffix_3);
 
@@ -221,7 +221,7 @@ def Inception7D(data,num_3x3_red, num_3x3,num_d7_3x3_red, num_d7_1, num_d7_2, nu
     string s_pool = "%s_pool_%s_pool";
     var pool_name = tuple(pool, name);
     var name_7 = s_pool % pool_name;
-    var pooling = Pooling(data, kernel_7, stride_7, pool, pad_7, name_7);
+    var pooling = Pooling(data, kernel_7, stride_7, pad_7, pool, name_7);
 
     var concat_tuple = make_tuple(tower_3x3, tower_d7_3x3);
     concat_tuple = append(pooling);
@@ -328,7 +328,7 @@ def main(){
     const stride_4 = (2, 2);
     string pool_type = "max";
     string name_4 = "pool";    
-    var pool = Pooling(conv_2, kernel_4, stride_4, pool_type, pad, name_4);
+    var pool = Pooling(conv_2, kernel_4, stride_4, pad, pool_type, name_4);
 
     const num_filter_5 = 80;
     const kernel_5 = (1, 1);
@@ -341,7 +341,7 @@ def main(){
     var conv_4 = Conv(conv_3, num_filter_6, kernel_6, stride, pad, name_6, suffix);
 
     string name_7 = "pool1";  
-    var pool1 = Pooling(conv_4, kernel_4, stride_4, pool_type, pad, name_7);
+    var pool1 = Pooling(conv_4, kernel_4, stride_4, pad, pool_type, name_7);
 
     string avg = "avg";
     string mixed = "mixed";
@@ -381,7 +381,7 @@ def main(){
     const kernel_8 = (8, 8);
     const stride_8 = (1, 1);
     string name_8 = "global_pool";
-    pool = Pooling(in5b, kernel_8, stride_8, avg, pad, name_8);
+    pool = Pooling(in5b, kernel_8, stride_8, pad, avg, name_8);
 
     var flatten = batch_flatten(pool);
 

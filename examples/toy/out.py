@@ -1,5 +1,5 @@
-import tvm
-import numpy as np
+from tvm import relay
+from .init import create_workload
 from . import layers
 
 def func_Conv(data, num_filter, kernel, stride, pad, name, suffix):

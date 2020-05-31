@@ -724,8 +724,8 @@ std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(
     cout << hashtable.size() << endl;
     std::ofstream outfile;
     outfile.open("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py", std::ios::out);
-    outfile << "import tvm\n" 
-            << "import numpy as np\n"
+    outfile << "from tvm import relay\n" 
+            << "from .init import create_workload\n"
             << "from . import layers\n";
     outfile.flush();
     outfile.close();
