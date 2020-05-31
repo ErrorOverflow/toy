@@ -65,8 +65,9 @@ namespace {
     class MLIRGenImpl {
     public:
         MLIRGenImpl(mlir::MLIRContext &context, 
-                    unordered_map <uint32_t, std::string> &hashtable) 
-                    : builder(&context), hashtable(hashtable) {}
+                    unordered_map <uint32_t, std::string> &hashtable,
+                    std::unordered_map<std::string, uint32_t> &counter) 
+                    : builder(&context), hashtable(hashtable), counter(counter) {}
 
         /// Public API: convert the AST for a Toy module (source file) to an MLIR
         /// Module operation.
@@ -109,6 +110,8 @@ namespace {
         /// scope is destroyed and the mappings created in this scope are dropped.
         llvm::ScopedHashTable <StringRef, mlir::Value> symbolTable;
         unordered_map <uint32_t, std::string> &hashtable;
+        std::unordered_map<std::string, uint32_t> &counter;
+        uint32_t func_used_num = 0;
         uint32_t value_num = 0;
         uint32_t tmp_num = 0;
         uint32_t iteration = 0;
@@ -188,7 +191,8 @@ namespace {
         mlir::FuncOp mlirGen(FunctionAST &funcAST) {
             // Create a scope in the symbol table to hold variable declarations.
             ScopedHashTableScope <llvm::StringRef, mlir::Value> var_scope(symbolTable);
-
+            std::string fnName = funcAST.getProto()->getName().str();
+            counter.insert(std::pair<std::string, uint32_t>(fnName, func_used_num));
             // Create an MLIR function for the given prototype.
             mlir::FuncOp function(mlirGen(*funcAST.getProto()));
             if (!function)
@@ -234,7 +238,7 @@ namespace {
                 function.setType(builder.getFunctionType(function.getType().getInputs(),
                                                          getType(VarType{})));
             }
-
+            func_used_num = hashtable.size();
             return function;
         }
 
@@ -334,9 +338,9 @@ namespace {
             // tensor literal.
             auto dataAttribute =
                     mlir::DenseElementsAttr::get(dataType, llvm::makeArrayRef(data));
-            if(iteration == 1 && !isConst)
-                return builder.create<ConstantOp>(loc(lit.loc()), type, dataAttribute);
             std::string data_struct = "list";
+            if(!isConst)
+                insert_table();
             return builder.create<ConstOp>(loc(lit.loc()), type, data_struct, dataAttribute);
         }
 
@@ -611,9 +615,9 @@ namespace {
 
         /// Emit a constant for a single number (FIXME: semantic? broadcast?)
         mlir::Value mlirGen(NumberExprAST &num) {
-            if(iteration == 1 && !isConst)
-                return builder.create<ConstantOp>(loc(num.loc()), num.getValue());
             std::string data_struct = "number";
+            if(!isConst)
+                insert_table();
             return builder.create<ConstOp>(loc(num.loc()), data_struct, num.getValue());
         }
 
@@ -805,8 +809,9 @@ namespace toy {
 // The public API for codegen.
     mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
                                   ModuleAST &moduleAST,
-                                  unordered_map <uint32_t, std::string> &hashtable) {
-        return MLIRGenImpl(context, hashtable).mlirGen(moduleAST);
+                                  unordered_map <uint32_t, std::string> &hashtable,
+                                  std::unordered_map<std::string, uint32_t> &counter) {
+        return MLIRGenImpl(context, hashtable, counter).mlirGen(moduleAST);
     }
 
 } // namespace toy

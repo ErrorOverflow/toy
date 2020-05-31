@@ -18,6 +18,7 @@
 // This file implements the entry point for the Toy compiler.
 //
 //===----------------------------------------------------------------------===//
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -116,12 +117,13 @@ std::unique_ptr <toy::ModuleAST> parseInputFile(llvm::StringRef filename,
 
 int loadMLIR(mlir::MLIRContext &context, mlir::OwningModuleRef &module, 
             std::unordered_map <uint32_t, std::string> &hashtable,
-            std::vector <std::string> &func_name_list) {
+            std::vector <std::string> &func_name_list,
+            std::unordered_map<std::string, uint32_t> &counter) {
     // Handle '.toy' input to the compiler.
     if (inputType != InputType::MLIR &&
         !llvm::StringRef(inputFilename).endswith(".mlir")) {
         auto moduleAST = parseInputFile(inputFilename, func_name_list);
-        module = mlirGen(context, *moduleAST, hashtable);
+        module = mlirGen(context, *moduleAST, hashtable, counter);
         return !module ? 1 : 0;
     }
     // Otherwise, the input is '.mlir'.
@@ -147,7 +149,8 @@ int loadAndProcessMLIR(mlir::MLIRContext &context,
                        mlir::OwningModuleRef &module, 
                        std::unordered_map <uint32_t, std::string> &hashtable,
                        std::vector <std::string> &func_name_list) {
-    if (int error = loadMLIR(context, module, hashtable, func_name_list))
+    std::unordered_map<std::string, uint32_t> counter;
+    if (int error = loadMLIR(context, module, hashtable, func_name_list, counter))
         return error;
     mlir::PassManager pm(&context);
     // Apply any generic pass manager command line options and run the pipeline.
@@ -187,8 +190,6 @@ int loadAndProcessMLIR(mlir::MLIRContext &context,
 
     if (isLoweringToIR) {
         // Finish lowering the toy IR to the relay.
-        uint32_t tmp = 0;
-        uint32_t *counter = &tmp;
         pm.addPass(mlir::relay::createRelayAPIPass(hashtable, counter));
     }
 
@@ -294,6 +295,7 @@ int main(int argc, char **argv) {
     if (emitAction == Action::RunJIT)
         return runJit(*module);
 
+    std::cout << "233" << std::endl;
     std::string outfile_name = std::string("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py");
     std::ofstream outfile;
     outfile.open(outfile_name, std::ios::app);

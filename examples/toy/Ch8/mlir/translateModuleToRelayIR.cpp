@@ -45,6 +45,8 @@ using std::string;
 using std::cout;
 using std::endl;
 
+#define FIND_VALUE_BASE counter.find(func_name)->second
+
 int32_t mlir::translateModuleToRelayIR(ModuleOp module) {
     return 0;
 }
@@ -56,7 +58,7 @@ namespace {
         uint32_t tmp_num;
         uint32_t loop_flag = 0;
         uint32_t indent = 0;
-        uint32_t *counter;
+        uint32_t func_value_base;
         bool is_loop_field = false;
 
         std::string func_name;
@@ -64,6 +66,8 @@ namespace {
         std::vector <mlir::Value> each_result;
         std::vector <std::string> while_end;
         std::vector <uint32_t> loop_round;
+        
+        std::unordered_map<std::string, uint32_t> &counter;
         unordered_map <uint32_t, std::string> &hashtable;
 
         void Op2Realy(mlir::Operation &op, std::string convert_name){
@@ -73,7 +77,7 @@ namespace {
             tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
             for(uint32_t i = 0; i < op.getNumOperands(); i++){
                 for (p = 0; p < len; p++) if (each_result[p] == op.getOperand(i)) break;
-                tmp_expr << getString(p + *counter);
+                tmp_expr << getString(p + FIND_VALUE_BASE);
                 if(i != op.getNumOperands()-1)
                     tmp_expr << ", ";
             }
@@ -96,9 +100,9 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << getString(i + *counter);
+            tmp_expr << getString(i + FIND_VALUE_BASE);
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << ", " << getString(i + *counter) << ")\n";
+            tmp_expr << ", " << getString(i + FIND_VALUE_BASE) << ")\n";
             each_result.push_back(op.getResult(0));
             tmp_num++;
             if (is_loop_field) {
@@ -118,7 +122,7 @@ namespace {
             tmp_expr << getString(tmp_num) << " = \"" << str << "\"\n";
             stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
-            tmp_num++;          
+            tmp_num++;
         }
 
         void Bool2Relay(mlir::Operation &op){
@@ -129,7 +133,7 @@ namespace {
             tmp_expr << getString(tmp_num) << " = " << str << "\n";
             stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
-            tmp_num++;        
+            tmp_num++;
         }
 
         void Bin2Relay(mlir::Operation &op){
@@ -141,10 +145,10 @@ namespace {
                 size_t len = each_result.size();
                 size_t i;
                 for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-                tmp_expr << getString(i + *counter) << " ";
+                tmp_expr << getString(i + FIND_VALUE_BASE) << " ";
                 tmp_expr << bin_op.op().str() << " ";
                 for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-                tmp_expr << getString(i + *counter) << "\n";
+                tmp_expr << getString(i + FIND_VALUE_BASE) << "\n";
                 if(is_loop_field)
                     while_end.push_back(tmp_expr.str());
                 else {
@@ -155,10 +159,10 @@ namespace {
                 size_t len = each_result.size();
                 size_t i;
                 for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-                tmp_expr << getString(i + *counter) << " ";
+                tmp_expr << getString(i + FIND_VALUE_BASE) << " ";
                 tmp_expr << bin_op.op().str() << " ";
                 for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-                tmp_expr << getString(i + *counter) << ":\n"; 
+                tmp_expr << getString(i + FIND_VALUE_BASE) << ":\n"; 
                 stream2file(tmp_expr);
             }
             if(is_loop_field)
@@ -176,7 +180,7 @@ namespace {
             tmp_expr << getString(tmp_num) << " = func_" << call_op.callee().getRootReference().str() <<"(";
             for(uint32_t i = 0; i < op.getNumOperands(); i++){
                 for (p = 0; p < len; p++) if (each_result[p] == op.getOperand(i)) break;
-                tmp_expr << getString(p + *counter);
+                tmp_expr << getString(p + FIND_VALUE_BASE);
                 if(i != op.getNumOperands()-1)
                     tmp_expr << ",";
             }
@@ -191,7 +195,7 @@ namespace {
             size_t len = each_result.size();
             std::stringstream tmp_expr;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            std::string return_var = getString(i + *counter);
+            std::string return_var = getString(i + FIND_VALUE_BASE);
             INDENT();
             if(func_name == string("main"))
                 tmp_expr << "return create_workload(relay.Function(relay.analysis.free_vars("
@@ -303,9 +307,9 @@ namespace {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << convert_name << "(name=" << getString(i + *counter) << ", ";
+            tmp_expr << convert_name << "(name=" << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "shape=" << getString(i + *counter) << ")\n";
+            tmp_expr << "shape=" << getString(i + FIND_VALUE_BASE) << ")\n";
             stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -331,7 +335,7 @@ namespace {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << name.str() << "[" << getString(i + *counter) << "]\n";
+            tmp_expr << name.str() << "[" << getString(i + FIND_VALUE_BASE) << "]\n";
             stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -343,15 +347,15 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "episilon = " << getString(i + *counter) << ", ";
+            tmp_expr << "episilon = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
-            tmp_expr << "scale = " << getString(i + *counter) << ", ";
+            tmp_expr << "scale = " << getString(i + FIND_VALUE_BASE) << ", ";
 
             tmp_expr << "name = ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
-            tmp_expr << getString(i + *counter) << "))\n";
+            tmp_expr << getString(i + FIND_VALUE_BASE) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -369,25 +373,25 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "channels = " << getString(i + *counter) << ", ";
+            tmp_expr << "channels = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
-            tmp_expr << "groups = " << getString(i + *counter) << ", ";
+            tmp_expr << "groups = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
-            tmp_expr << "kernel_size = " << getString(i + *counter) << ", ";
+            tmp_expr << "kernel_size = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(4)) break;
-            tmp_expr << "strides = " << getString(i + *counter) << ", ";
+            tmp_expr << "strides = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(5)) break;
-            tmp_expr << "padding = " << getString(i + *counter) << ", ";
+            tmp_expr << "padding = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(6)) break;
-            tmp_expr << "data_layout = " << getString(i + *counter) << ", ";
+            tmp_expr << "data_layout = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(7)) break;
-            tmp_expr << "kernel_layout = " << getString(i + *counter) << ", ";
+            tmp_expr << "kernel_layout = " << getString(i + FIND_VALUE_BASE) << ", ";
 
             tmp_expr << "name = ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(8)) break;
-            tmp_expr << getString(i + *counter) <<")\n";
+            tmp_expr << getString(i + FIND_VALUE_BASE) <<")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -405,13 +409,13 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "pool_size = " << getString(i + *counter) << ", ";
+            tmp_expr << "pool_size = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
-            tmp_expr << "strides = " << getString(i + *counter) << ", ";
+            tmp_expr << "strides = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
-            tmp_expr << "padding = " << getString(i + *counter) << ")\n";
+            tmp_expr << "padding = " << getString(i + FIND_VALUE_BASE) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -429,9 +433,9 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "layout = " << getString(i + *counter) << ")\n";
+            tmp_expr << "layout = " << getString(i + FIND_VALUE_BASE) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -449,9 +453,9 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data_layout = " << getString(i + *counter) << ", ";
+            tmp_expr << "data_layout = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "is_depthwise = " << getString(i + *counter) << ")\n";
+            tmp_expr << "is_depthwise = " << getString(i + FIND_VALUE_BASE) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -469,7 +473,7 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data = " << getString(i + *counter) << ")\n";
+            tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ")\n";
             
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -487,9 +491,9 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "data = " << getString(i + *counter) << ", ";
+            tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "units = " << getString(i + *counter) << ")\n";
+            tmp_expr << "units = " << getString(i + FIND_VALUE_BASE) << ")\n";
 
             each_result.push_back(op.getResult(0));
             tmp_num++;
@@ -508,20 +512,22 @@ namespace {
             size_t len = each_result.size();
             size_t i;
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << "(" << getString(i + *counter) << ", ";
+            tmp_expr << "(" << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << getString(i + *counter) << ")\n";
+            tmp_expr << getString(i + FIND_VALUE_BASE) << ")\n";
             stream2file(tmp_expr);
             each_result.push_back(op.getResult(0));
             tmp_num++; 
         }
 
         void MakeTuple2Relay(mlir::Operation &op){
-
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
         }
 
         void Append2Relay(mlir::Operation &op){
-
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
         }
 
         void stream2file(std::stringstream &out){
@@ -605,9 +611,9 @@ namespace {
 
         void runOnFunctionInitial(){
             indent = 1;
-            tmp_num = *counter;
             each_result.clear();
             func_name = getFunction().getName().str();
+            tmp_num = FIND_VALUE_BASE;
             //cout << tmp_num << endl;
             // if(getFunction().getName() == "main")
             //     for(auto i : hashtable){
@@ -620,7 +626,8 @@ namespace {
         }
 
     public:
-        RelayAPIPass(unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter)
+        RelayAPIPass(unordered_map <uint32_t, std::string> &hashtable, 
+                    std::unordered_map<std::string, uint32_t> &counter)
                  : counter(counter), hashtable(hashtable){}
         void runOnFunction() override {
             runOnFunctionInitial();
@@ -704,13 +711,17 @@ namespace {
             //     }
             //     std::cout << std::endl;
             // }
-            *counter=tmp_num;
         }
     };
 }
 
 std::unique_ptr <mlir::Pass> mlir::relay::createRelayAPIPass(
-            unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter) {
+            unordered_map <uint32_t, std::string> &hashtable, 
+            std::unordered_map<std::string, uint32_t> &counter) {
+    for(auto iter=counter.begin(); iter!=counter.end();iter++){
+        cout << iter->first << " " << iter->second << endl;
+    }
+    cout << hashtable.size() << endl;
     std::ofstream outfile;
     outfile.open("/home/wml/llvm-project-master/llvm-project/mlir/examples/toy/out.py", std::ios::out);
     outfile << "import tvm\n" 

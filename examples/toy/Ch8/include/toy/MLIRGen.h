@@ -39,7 +39,8 @@ namespace toy {
 /// Emit IR for the given Toy moduleAST, returns a newly created MLIR module
 /// or nullptr on failure.
     mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST,
-                                std::unordered_map <uint32_t, std::string> &hashtable);
+                                std::unordered_map <uint32_t, std::string> &hashtable,
+                                std::unordered_map<std::string, uint32_t> &counter);
 } // namespace toy
 
 #endif // MLIR_TUTORIAL_TOY_MLIRGEN_H_

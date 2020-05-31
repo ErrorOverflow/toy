@@ -14,7 +14,8 @@ namespace mlir {
 
     namespace relay {
         std::unique_ptr <mlir::Pass> createRelayAPIPass(
-                std::unordered_map <uint32_t, std::string> &hashtable, uint32_t *counter);
+                std::unordered_map <uint32_t, std::string> &hashtable, 
+                std::unordered_map<std::string, uint32_t> &counter);
     }
 
 } // namespace mlir
