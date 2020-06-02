@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -199,8 +200,8 @@ namespace {
             INDENT();
             if(func_name == string("main"))
                 tmp_expr << "return create_workload(relay.Function(relay.analysis.free_vars("
-                        << return_var << ")," << return_var << ")\n";
-            else tmp_expr << "return(" << return_var << ")\n";
+                        << return_var << ")," << return_var << "))\n";
+            else tmp_expr << "return " << return_var << "\n";
             stream2file(tmp_expr);
         }
 
@@ -247,13 +248,9 @@ namespace {
             for (uint32_t i = 0; i < dataNum; i++) {
                 data.push_back(*valueIt++);
             }
-            std::vector <std::string> result;
-            for (uint32_t i = 0; i < dataNum; i++) {
-                result.push_back(std::to_string(data[i]));
-            }
-            getDenseElement(result, tmp_para_define, '[', ']',shape_vector, 0, 0, result.size());
+
+            getDenseElement(data, tmp_para_define, '[', ']',shape_vector, 0, 0, data.size());
             func_para_define.append(tmp_para_define.str().append(";\n"));
-            // TODO:
             each_result.push_back(oop->getResult(0));
             num++;
             tmp_num++;
@@ -279,10 +276,6 @@ namespace {
             for (uint32_t i = 0; i < dataNum; i++) {
                 data.push_back(*valueIt++);
             }
-            std::vector <std::string> result;
-            for (uint32_t i = 0; i < dataNum; i++) {
-                result.push_back(std::to_string(data[i]));
-            }
 
             llvm::StringRef data_struct = constop.data_struct();
             char leftParen, rightParen;
@@ -293,7 +286,7 @@ namespace {
                 leftParen = '(';
                 rightParen = ')';   
             }
-            getDenseElement(result, tmp_para_define, leftParen, rightParen, shape_vector, 0, 0, result.size());
+            getDenseElement(data, tmp_para_define, leftParen, rightParen, shape_vector, 0, 0, data.size());
             tmp_expr << tmp_para_define.str() << "\n";
             stream2file(tmp_expr);
             each_result.push_back(oop->getResult(0));
@@ -307,7 +300,7 @@ namespace {
             size_t i;
             size_t len = each_result.size();
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
-            tmp_expr << convert_name << "(name=" << getString(i + FIND_VALUE_BASE) << ", ";
+            tmp_expr << convert_name << "(" << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
             tmp_expr << "shape=" << getString(i + FIND_VALUE_BASE) << ")\n";
             stream2file(tmp_expr);
@@ -349,7 +342,7 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "episilon = " << getString(i + FIND_VALUE_BASE) << ", ";
+            tmp_expr << "epsilon = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
             tmp_expr << "scale = " << getString(i + FIND_VALUE_BASE) << ", ";
 
@@ -375,7 +368,7 @@ namespace {
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
             tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
-            tmp_expr << "channels = " << getString(i + FIND_VALUE_BASE) << ", ";
+            tmp_expr << "channels = int(" << getString(i + FIND_VALUE_BASE) << "), ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
             tmp_expr << "groups = " << getString(i + FIND_VALUE_BASE) << ", ";
             for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
@@ -537,12 +530,11 @@ namespace {
             outfile_name += ".py";
             outfile.open(outfile_name, std::ios::app);
             outfile << out.str();
-            //cout << out.str();
             outfile.flush();
             outfile.close();
         }
 
-        int getDenseElement(std::vector <std::string> &result, std::stringstream &out, 
+        int getDenseElement(std::vector <double> &result, std::stringstream &out, 
                             char leftParen, char rightParen, std::vector <uint32_t> shape, 
                             size_t n, size_t low, size_t high) {
             if(shape.size() == 0){
@@ -657,7 +649,7 @@ namespace {
                     else if (op_name == "relay.for")
                         For2Relay(op);
                     else if (op_name == "relay.add")
-                        Binary2Relay(op, "relay.op.add");
+                        Binary2Relay(op, "relay.add");
                     else if (op_name == "relay.bin")
                         Bin2Relay(op);
                     else if (op_name == "relay.conv1d")

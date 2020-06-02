@@ -632,23 +632,21 @@ namespace {
                 case toy::ExprAST::Expr_Var:
                     iteration --;
                     return mlirGen(cast<VariableExprAST>(expr));
-                    break;
                 case toy::ExprAST::Expr_Literal:
                     r =  mlirGen(cast<LiteralExprAST>(expr));
                     break;
                 case toy::ExprAST::Expr_Call:
                     iteration --;
                     return mlirGen(cast<CallExprAST>(expr));
-                    break;
                 case toy::ExprAST::Expr_Index:
                     r =  mlirGen(cast<IndexExprAST>(expr));
                     break;
                 case toy::ExprAST::Expr_Num:
-                    r =  mlirGen(cast<NumberExprAST>(expr));
-                    break;
+                    iteration --;
+                    return  mlirGen(cast<NumberExprAST>(expr));
                 case toy::ExprAST::Expr_Tuple:
-                    r =  mlirGen(cast<TupleExprAST>(expr));
-                    break;                    
+                    iteration --;
+                    return  mlirGen(cast<TupleExprAST>(expr));                 
                 default:
                     emitError(loc(expr.loc()))
                             << "MLIR codegen encountered an unhandled expr kind '"

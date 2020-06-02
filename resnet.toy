@@ -7,16 +7,18 @@ def residual_unit(data, num_filter, stride, dim_match, name){
     string NCHW= "NCHW";
     string OIHW= "OIHW";
 
-    string name_bn1 = "bn1";
+    string name_bn1 = "_bn1";
+    name_bn1 = name + name_bn1;
     var bn1 = batch_norm(data,epsilon,symbol_true, name_bn1);    
     var act1 = relu(bn1);
     var channels1 = num_filter*0.25;
     const kernel_size1 = (3, 3);
     const padding1 = (1, 1);
-    string name_conv1 = "conv1";
+    string name_conv1 = "_conv1";
+    name_conv1 = name + name_conv1;
     var conv1 = conv2d(act1, channels1, groups, kernel_size1, stride, padding1, NCHW, OIHW, name_conv1);
     
-    string name_bn2 = "bn2";
+    string name_bn2 = "_bn2";
     name_bn2 = name + name_bn2;
     var bn2 = batch_norm(conv1, epsilon, symbol_false, name);
     var act2 = relu(bn2);
@@ -24,16 +26,18 @@ def residual_unit(data, num_filter, stride, dim_match, name){
     const kernel_size2 = (3, 3);
     const strides2 = (1, 1);
     const padding2 = (1, 1);
-    string name_conv2 = "conv2";
+    string name_conv2 = "_conv2";
+    name_conv2 = name + name_conv2;
     var conv2 = conv2d(act2,num_filter,groups, kernel_size2, strides2, padding2, NCHW, OIHW, name_conv2);
 
-    var shortcut = data*1;
+    var r = add(conv2, data);
     if(dim_match == symbol_false){
         const kernel_size3 = (1, 1);
-        string name_shortcut = "sc";
-        shortcut = conv2d(act1, num_filter, groups, kernel_size3, stride, padding, NCHW, OIHW, name_shortcut);
+        string name_shortcut = "_sc";
+        name_shortcut = name + name_shortcut;
+        var shortcut = conv2d(act1, num_filter, groups, kernel_size3, stride, padding, NCHW, OIHW, name_shortcut);
+        r = add(conv2, shortcut);
     }
-    var r = add(conv2, shortcut);
     return(r);
 }
 
@@ -46,6 +50,8 @@ def main() {
     const num_stages = 4;
     const epsilon = 0.00002;
     const data_shape = (1,3,224,224);
+    const units=[2, 2, 2, 2];
+    const filter_list = [64, 64, 128, 256, 512];
     const num_classes = 1000;
     bool symbol_true = True;
     bool symbol_false = False;
@@ -59,7 +65,7 @@ def main() {
     const padding1 = (3, 3);
     const groups = 1;
     string name_conv0 = "conv0";
-    var conv0 = conv2d(data, channels1, groups, kernel_size1, strides1, padding1, NCHW, OIHW, name_conv0);
+    var conv0 = conv2d(bn_data, channels1, groups, kernel_size1, strides1, padding1, NCHW, OIHW, name_conv0);
     
     string name_bn0 = "bn0";
     var bn0 = batch_norm(conv0, epsilon, symbol_true, name_bn0);
