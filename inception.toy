@@ -45,7 +45,7 @@ def Inception7A(data,num_1x1,num_3x3_red, num_3x3_1, num_3x3_2,num_5x5_red, num_
     string suffix_tower_5x5_2 = "_conv_1";
     tower_5x5 = Conv(tower_5x5, num_5x5, kernel_tower_5x5, stride, pad_tower_5x5, name_tower, suffix_tower_5x5_2);
 
-    string s_tower_1 = "s_tower_1";
+    string s_tower_1 = "%s_tower_1";
     var name_tower_1 = s_tower_1 % name;
     string suffix_tower_3x3 = "_conv";
     var tower_3x3 = Conv(data, num_3x3_red, kernel, stride, pad, name_tower_1, suffix_tower_3x3);
@@ -63,7 +63,7 @@ def Inception7A(data,num_1x1,num_3x3_red, num_3x3_1, num_3x3_2,num_5x5_red, num_
     var name_pooling = s_pool % pool_name;
     var pooling = Pooling(data, kernel_5, stride, pad_5, pool, name_pooling);
 
-    string s_tower_2 = "s_tower_2";
+    string s_tower_2 = "%s_tower_2";
     var name_tower_2 = s_tower_2 % name;
     string suffix_cproj = "_conv";
     var cproj = Conv(pooling, proj, kernel, stride, pad, name_tower_2, suffix_cproj);
@@ -335,7 +335,7 @@ def main(){
     string name_5 = "conv_3";      
     var conv_3 = Conv(pool, num_filter_5, kernel_5, stride, pad, name_5, suffix);
 
-    const num_filter_6 = 80;
+    const num_filter_6 = 192;
     const kernel_6 = (3, 3);
     string name_6 = "conv_4";     
     var conv_4 = Conv(conv_3, num_filter_6, kernel_6, stride, pad, name_6, suffix);

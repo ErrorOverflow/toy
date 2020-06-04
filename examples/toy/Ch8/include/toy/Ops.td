@@ -387,6 +387,23 @@ def MaxPool2dOp : Toy_Op<"max_pool2d",
   ];
 }
 
+def AvgPool2dOp : Toy_Op<"avg_pool2d",
+    [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
+  let summary = "avg_pool2d operation";
+
+  let arguments = (ins F64Tensor:$data, F64Tensor:$pool_size, F64Tensor:$strides,
+                    F64Tensor:$padding, F64Tensor:$count_include_pad);
+  let results = (outs F64Tensor);
+
+  let builders = [
+    OpBuilder<"Builder *b, OperationState &result, Value data, Value pool_size,"
+                "Value strides, Value padding, Value count_include_pad", [{
+      buildAvgPool2dOp(b, result, data, pool_size, strides, padding, count_include_pad);
+    }]
+    >
+  ];
+}
+
 def GlobalAvgPool2dOp : Toy_Op<"global_avg_pool2d",
     [NoSideEffect, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
   let summary = "global_avg_pool2d operation";

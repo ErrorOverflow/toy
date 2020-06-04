@@ -326,6 +326,18 @@ static void buildMaxPool2dOp(mlir::Builder *builder, mlir::OperationState &state
 void MaxPool2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
 
 //===----------------------------------------------------------------------===//
+// AvgPool2dOp
+
+static void buildAvgPool2dOp(mlir::Builder *builder, mlir::OperationState &state,
+                       mlir::Value data, mlir::Value pool_size, mlir::Value strides, 
+                       mlir::Value padding, mlir::Value count_include_pad) {
+    state.addTypes(UnrankedTensorType::get(builder->getF64Type()));
+    state.addOperands({data, pool_size, strides, padding, count_include_pad});
+}
+
+void AvgPool2dOp::inferShapes() { getResult().setType(getOperand(0).getType()); }
+
+//===----------------------------------------------------------------------===//
 // GlobalAvgPool2dOp
 
 static void buildGlobalAvgPool2dOp(mlir::Builder *builder, mlir::OperationState &state,

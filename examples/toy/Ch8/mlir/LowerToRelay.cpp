@@ -143,6 +143,7 @@ namespace {
     using BatchNormOpLowering = ComplexOpLowering<toy::BatchNormOp, relay::BatchNormOp>;
     using ConvKernelLayoutOpLowering = ComplexOpLowering<toy::ConvKernelLayoutOp, relay::ConvKernelLayoutOp>;
     using MaxPool2dOpLowering = ComplexOpLowering<toy::MaxPool2dOp, relay::MaxPool2dOp>;
+    using AvgPool2dOpLowering = ComplexOpLowering<toy::AvgPool2dOp, relay::AvgPool2dOp>;
 
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Constant operations
@@ -313,7 +314,7 @@ void ToyToRelayLoweringPass::runOnFunction() {
     OwningRewritePatternList patterns;
     patterns.insert<AddOpLowering, ConstantOpLowering, ConstOpLowering,
             SoftmaxOpLowering, BiasAddLowering, DenseLowering, ConcatenateOpLowering,
-            BinOpLowering, VarLowering, BatchFlattenOpLowering,
+            BinOpLowering, VarLowering, BatchFlattenOpLowering, AvgPool2dOpLowering,
             GlobalAvgPool2dOpLowering, DenseBiasOpLowering, MaxPool2dOpLowering,
             IndexOpLowering, LoopFieldOpLowering, IfEndOpLowering, WhileEndOpLowering,
             Conv2dOpLowering, BatchNormOpLowering, ConvKernelLayoutOpLowering,

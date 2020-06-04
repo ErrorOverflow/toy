@@ -499,6 +499,18 @@ namespace {
                 }
             }
 
+            if (callee == "avg_pool2d") {
+                if(call.getArgs().size() == 5){
+                    return builder.create<AvgPool2dOp>(location, operands[0], operands[1],
+                                operands[2], operands[3], operands[4]);
+                }
+                else{
+                    emitError(location, "MLIR codegen encountered an error: toy.avg_pool2d "
+                                        "just accept 5 arguments");
+                    return nullptr;
+                }
+            }
+
             if (callee == "global_avg_pool2d") {
                 if(call.getArgs().size() == 2){
                     return builder.create<GlobalAvgPool2dOp>(location, operands[0], operands[1]);

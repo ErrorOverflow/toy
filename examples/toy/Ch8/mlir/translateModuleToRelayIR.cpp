@@ -64,6 +64,7 @@ namespace {
 
         std::string func_name;
         std::string func_para_define;
+        std::string tuple_buffer; // just for inception_v3
         std::vector <mlir::Value> each_result;
         std::vector <std::string> while_end;
         std::vector <uint32_t> loop_round;
@@ -425,6 +426,32 @@ namespace {
             }
         }
 
+        void AvgPool2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "data = " << getString(i + FIND_VALUE_BASE) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << "pool_size = " << getString(i + FIND_VALUE_BASE) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(2)) break;
+            tmp_expr << "strides = " << getString(i + FIND_VALUE_BASE) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(3)) break;
+            tmp_expr << "padding = " << getString(i + FIND_VALUE_BASE) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(4)) break;
+            tmp_expr << "count_include_pad = " << getString(i + FIND_VALUE_BASE) << ")\n";
+
+            each_result.push_back(op.getResult(0));
+            tmp_num++;
+            if (is_loop_field) {
+                while_end.push_back(tmp_expr.str());
+            } else {
+                INDENT();
+                stream2file(tmp_expr);
+            }
+        }
+
         void GlobalAvgPool2Relay(mlir::Operation &op, std::string convert_name){
             std::stringstream tmp_expr;
             tmp_expr << getString(tmp_num) << " = " << convert_name << "(";
@@ -518,14 +545,44 @@ namespace {
             tmp_num++; 
         }
 
+        // Just for inception_v3. maybe same as Tuple2Relay.
         void MakeTuple2Relay(mlir::Operation &op){
+            std::stringstream tmp_expr;
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << "(" << getString(i + FIND_VALUE_BASE) << ", ";
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << getString(i + FIND_VALUE_BASE) << ")";
+            tuple_buffer = tmp_expr.str();
             each_result.push_back(op.getResult(0));
             tmp_num++;
         }
 
+        // Just for inception_v3.
         void Append2Relay(mlir::Operation &op){
+            std::stringstream tmp_expr;
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(0)) break;
+            tmp_expr << ", " << getString(i + FIND_VALUE_BASE) << ")";
+            tuple_buffer.pop_back();// erase ')'
+            tuple_buffer = tuple_buffer + tmp_expr.str();
             each_result.push_back(op.getResult(0));
             tmp_num++;
+        }
+
+        void Concatenate2Relay(mlir::Operation &op, std::string convert_name){
+            std::stringstream tmp_expr;
+            INDENT();
+            tmp_expr << getString(tmp_num) << " = " << convert_name << "(" << tuple_buffer << ", ";
+            size_t len = each_result.size();
+            size_t i;
+            for (i = 0; i < len; i++) if (each_result[i] == op.getOperand(1)) break;
+            tmp_expr << getString(i + FIND_VALUE_BASE) << ")\n";
+            stream2file(tmp_expr);
+            each_result.push_back(op.getResult(0));
+            tmp_num++; 
         }
 
         void stream2file(std::stringstream &out){
@@ -611,11 +668,6 @@ namespace {
             each_result.clear();
             func_name = getFunction().getName().str();
             tmp_num = FIND_VALUE_BASE;
-            //cout << tmp_num << endl;
-            // if(getFunction().getName() == "main")
-            //     for(auto i : hashtable){
-            //         cout << i.first << " " << i.second << endl;
-            //     }
         }
 
         std::string getString(uint32_t n){
@@ -679,6 +731,8 @@ namespace {
                         Conv2Relay(op, "layers.conv2d");
                     else if (op_name == "relay.max_pool2d")
                         MaxPool2Relay(op, "relay.nn.max_pool2d");
+                    else if (op_name == "relay.avg_pool2d")
+                        AvgPool2Relay(op, "relay.nn.avg_pool2d");
                     else if (op_name == "relay.global_avg_pool2d")
                         GlobalAvgPool2Relay(op, "relay.nn.global_avg_pool2d");
                     else if (op_name == "relay.conv_kernel_layout")
@@ -691,23 +745,12 @@ namespace {
                         MakeTuple2Relay(op);
                     else if (op_name == "relay.append")
                         Append2Relay(op);
+                    else if (op_name == "relay.concatenate")
+                        Concatenate2Relay(op, "relay.concatenate");
                     else if (op_name == "relay.tuple")
                         Tuple2Relay(op);
                 }
             }
-            // if(getFunction().getName() == "main"){
-            //     std::cout << "if __name__ == \"__main__\":\n";
-            //     std::cout << func_para_define << "\n";
-            //     std::cout << "\tfor target, ctx in ctx_list():\n"
-            //             << "\t\tintrp = relay.create_executor(ctx=ctx, target=target)\n"
-            //             << "\t\top_res, op_grad = intrp.evaluate(func_main())(\t\\\n\t\t\t";
-            //     for (uint32_t i = 0; i < num; i++) {
-            //         std::cout << "data" << i;
-            //         if(i==num-1) cout << ")\n";
-            //         else cout << ",";
-            //     }
-            //     std::cout << std::endl;
-            // }
         }
     };
 }

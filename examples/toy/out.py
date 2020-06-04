@@ -23,7 +23,7 @@ def func_Pooling(data, kernel, stride, pad, pool_type, name):
     symbol_true = True
     r = relay.nn.max_pool2d(data = data, pool_size = kernel, strides = stride, padding = pad)
     if pool_type == AVG:
-        r = func_avg_pool2d(data,kernel,stride,pad,symbol_true)
+        r = relay.nn.avg_pool2d(data = data, pool_size = kernel, strides = stride, padding = pad, count_include_pad = symbol_true)
     return r
 
 def func_Inception7A(data, num_1x1, num_3x3_red, num_3x3_1, num_3x3_2, num_5x5_red, num_5x5, pool, proj, name):
@@ -42,7 +42,7 @@ def func_Inception7A(data, num_1x1, num_3x3_red, num_3x3_1, num_3x3_2, num_5x5_r
     pad_tower_5x5 = (2,2)
     suffix_tower_5x5_2 = "_conv_1"
     tower_5x5 = func_Conv(tower_5x5,num_5x5,kernel_tower_5x5,stride,pad_tower_5x5,name_tower,suffix_tower_5x5_2)
-    s_tower_1 = "s_tower_1"
+    s_tower_1 = "%s_tower_1"
     name_tower_1 = s_tower_1 % name
     suffix_tower_3x3 = "_conv"
     tower_3x3 = func_Conv(data,num_3x3_red,kernel,stride,pad,name_tower_1,suffix_tower_3x3)
@@ -56,11 +56,12 @@ def func_Inception7A(data, num_1x1, num_3x3_red, num_3x3_1, num_3x3_2, num_5x5_r
     s_pool = "%s_pool_%s_pool"
     name_pooling = s_pool % pool_name
     pooling = func_Pooling(data,kernel_5,stride,pad_5,pool,name_pooling)
-    s_tower_2 = "s_tower_2"
+    s_tower_2 = "%s_tower_2"
     name_tower_2 = s_tower_2 % name
     suffix_cproj = "_conv"
     cproj = func_Conv(pooling,proj,kernel,stride,pad,name_tower_2,suffix_cproj)
     axis = 1
+    concat = relay.concatenate((tower_1x1, tower_5x5, tower_3x3, cproj), axis)
     return concat
 
 def func_Inception7B(data, num_3x3, num_d3x3_red, num_d3x3_1, num_d3x3_2, pool, name):
@@ -96,6 +97,7 @@ def func_Inception7B(data, num_3x3, num_d3x3_red, num_d3x3_1, num_d3x3_2, pool, 
     name5 = s_pool % name
     pooling = func_Pooling(data,kernel_5,stride_5,pad_5,pool_type,name5)
     axis = 1
+    concat = relay.concatenate((tower_3x3, tower_d3x3, pooling), axis)
     return concat
 
 def func_Inception7C(data, num_1x1, num_d7_red, num_d7_1, num_d7_2, num_q7_red, num_q7_1, num_q7_2, num_q7_3, num_q7_4, pool, proj, name):
@@ -140,6 +142,7 @@ def func_Inception7C(data, num_1x1, num_d7_red, num_d7_1, num_d7_2, num_q7_red, 
     suffix_11 = "_conv"
     cproj = func_Conv(pooling,proj,kernel_11,stride,pad,name_11,suffix_11)
     axis = 1
+    concat = relay.concatenate((tower_1x1, tower_d7, tower_q7, cproj), axis)
     return concat
 
 def func_Inception7D(data, num_3x3_red, num_3x3, num_d7_3x3_red, num_d7_1, num_d7_2, num_d7_3x3, pool, name):
@@ -179,6 +182,7 @@ def func_Inception7D(data, num_3x3_red, num_3x3, num_d7_3x3_red, num_d7_1, num_d
     name_7 = s_pool % pool_name
     pooling = func_Pooling(data,kernel_7,stride_7,pad_7,pool,name_7)
     axis = 1
+    concat = relay.concatenate((tower_3x3, tower_d7_3x3, pooling), axis)
     return concat
 
 def func_Inception7E(data, num_1x1, num_d3_red, num_d3_1, num_d3_2, num_3x3_d3_red, num_3x3, num_3x3_d3_1, num_3x3_d3_2, pool, proj, name):
@@ -231,6 +235,7 @@ def func_Inception7E(data, num_1x1, num_d3_red, num_d3_1, num_d3_2, num_3x3_d3_r
     suffix_10 = "_conv"
     cproj = func_Conv(pooling,proj,kernel_10,stride,pad,name_10,suffix_10)
     axis = 1
+    concat = relay.concatenate((tower_1x1, tower_d3_a, tower_d3_b, tower_3x3_d3_a, tower_3x3_d3_b, cproj), axis)
     return concat
 
 def func_main():
@@ -263,7 +268,7 @@ def func_main():
     kernel_5 = (1,1)
     name_5 = "conv_3"
     conv_3 = func_Conv(pool,num_filter_5,kernel_5,stride,pad,name_5,suffix)
-    num_filter_6 = 80
+    num_filter_6 = 192
     kernel_6 = (3,3)
     name_6 = "conv_4"
     conv_4 = func_Conv(conv_3,num_filter_6,kernel_6,stride,pad,name_6,suffix)
