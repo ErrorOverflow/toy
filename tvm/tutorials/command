@@ -1,0 +1,1 @@
+nvprof --unified-memory-profiling off --log-file test.log python3 relay_test_net.py
