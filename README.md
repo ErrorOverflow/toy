@@ -2,7 +2,7 @@
 
 ### 1.如何构建项目
 
-首先需要在Linux下构建LLVM，我参考的是https://github.com/llvm/llvm-project的代码和https://mlir.llvm.org/getting_started/的构建方法。当然还要感谢孙明利学长的前期工作https://github.com/MingliSun/MLIR-TVM。
+首先需要在Linux下构建LLVM，我参考的是https://github.com/llvm/llvm-project 的代码和 https://mlir.llvm.org/getting_started/ 的构建方法。当然还要感谢孙明利学长的前期工作 https://github.com/MingliSun/MLIR-TVM 。
 
 如果你已经完成了LLVM的构建并且已经完成了官方文档对toy语言的教学，接着把本项目的项目名“toy”重命名为“mlir”，覆盖复制进LLVM的一级目录，这是因为mlir是一个开发活跃的项目，新老版本大概率不兼容。接着可以把本项目中的tvm文件夹剪切出去，它是用来做tvm下的网络测试，和mlir部分无关。
 
