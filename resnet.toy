@@ -11,16 +11,15 @@ def residual_unit(data, num_filter, stride, dim_match, name){
     name_bn1 = name + name_bn1;
     var bn1 = batch_norm(data,epsilon,symbol_true, name_bn1);    
     var act1 = relu(bn1);
-    var channels1 = num_filter*0.25;
     const kernel_size1 = (3, 3);
     const padding1 = (1, 1);
     string name_conv1 = "_conv1";
     name_conv1 = name + name_conv1;
-    var conv1 = conv2d(act1, channels1, groups, kernel_size1, stride, padding1, NCHW, OIHW, name_conv1);
+    var conv1 = conv2d(act1, num_filter, groups, kernel_size1, stride, padding1, NCHW, OIHW, name_conv1);
     
     string name_bn2 = "_bn2";
     name_bn2 = name + name_bn2;
-    var bn2 = batch_norm(conv1, epsilon, symbol_false, name);
+    var bn2 = batch_norm(conv1, epsilon, symbol_true, name);
     var act2 = relu(bn2);
 
     const kernel_size2 = (3, 3);

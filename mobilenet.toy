@@ -6,14 +6,15 @@ def conv_block(data, name, channels, strides){
 	bool symbol_true = True;
 	bool symbol_false = False;
     string NCHW = "NCHW";
+
     var kernel_layout = conv_kernel_layout(NCHW, symbol_false);
     string name_conv = "_conv";
-    string name_bn = "_bn";
     var name1 = name + name_conv;
     var conv = conv2d(data, channels, groups, kernel_size, strides, padding, NCHW, kernel_layout, name1);
     
+    string name_bn = "_bn";
     var name2 = name + name_bn;
-    var bn = batch_norm(conv, epsilon, symbol_false, name2);
+    var bn = batch_norm(conv, epsilon, symbol_true, name2);
     var act = relu(bn);
     return(act);
 }
@@ -38,7 +39,7 @@ def separable_conv_block(data, name, depthwise_channels, pointwise_channels, dow
     
     string name_bn1 = "_bn1";
     var name2 = name + name_bn1;
-    var bn1 = batch_norm(conv1, epsilon, symbol_false, name2);
+    var bn1 = batch_norm(conv1, epsilon, symbol_true, name2);
     var act1 = relu(bn1);
     const groups = 1;
     const kernel_size2 = (1,1);
@@ -51,7 +52,7 @@ def separable_conv_block(data, name, depthwise_channels, pointwise_channels, dow
     
     string name_bn2 = "_bn2";
     var name4 = name + name_bn2;
-    var bn2 = batch_norm(conv2, epsilon, symbol_false, name4);
+    var bn2 = batch_norm(conv2, epsilon, symbol_true, name4);
     var act2 = relu(bn2);
     return(act2);
 }
@@ -100,9 +101,11 @@ def main(){
     string name_separable_conv_block_6 = "separable_conv_block_6";
     var depthwise_channels6 = 256 * alpha;
     var pointwise_channels6 = 512 * alpha;     
-    body = separable_conv_block(body, name_separable_conv_block_6, depthwise_channels6, pointwise_channels6, symbol_false, layout);
+    body = separable_conv_block(body, name_separable_conv_block_6, depthwise_channels6, pointwise_channels6, symbol_true, layout);
     
-    for(const i = 7; i<12; i=i+1){
+    const i_end = 12;
+    const i_step = 1;
+    for(const i = 7; i < i_end; i = i + i_step){
         string name_separable_conv_block = "separable_conv_block_%d";
         var name_separable_conv_block_i = name_separable_conv_block % i;
         var depthwise_channelsi = 512 * alpha;
@@ -123,9 +126,9 @@ def main(){
     var pool = global_avg_pool2d(body, layout);
     var flatten = batch_flatten(pool);
 
-    string name_none = "None";
+    string None = "None";
     string name_weight = "fc_weight";
-    var weight = variable(name_weight, name_none);
+    var weight = variable(name_weight, None);
     var fc = dense(flatten, weight, num_classes);
     var sm = softmax(fc);
     return(sm);

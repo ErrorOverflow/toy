@@ -119,6 +119,11 @@ namespace {
             auto string_op = mlir::dyn_cast<mlir::relay::StringOp>(&op);
             std::stringstream tmp_expr;
             auto str = string_op.value().str();
+            if(str == "None"){
+                each_result.push_back(op.getResult(0));
+                tmp_num++;
+                return;
+            }
             INDENT();
             tmp_expr << getString(tmp_num) << " = \"" << str << "\"\n";
             stream2file(tmp_expr);
