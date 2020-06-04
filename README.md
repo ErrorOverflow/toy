@@ -35,7 +35,7 @@ cmake --build . --target check-mlir
 
 ### 3.如何在TVM中运行编译器的生成代码
 
-在1.我们提到的那个和mlir无关的文件夹这就派上用场了，里面一级目录有tutorial和python.tvm.relay.testing两个文件夹，如果你对TVM项目足够熟悉的话应该指导前者是TVM的教材文件，后者是TVM的测试文件（包括了用relay层编写的不同深度学习网络的样例），我在前者中的relay_test_net.py中会调用后者对应的网络文件（比如inception_v3_2.py）来执行网络。
+在1.我们提到的那个和mlir无关的文件夹这就派上用场了，里面一级目录有tutorial和python.tvm.relay.testing两个文件夹，如果你对TVM项目足够熟悉的话应知道前者是TVM的教程文件，后者是TVM的测试文件（包括了用relay层编写的不同深度学习网络的样例），我在前者中的relay_test_net.py中会调用后者对应的网络文件（比如inception_v3_2.py）来执行网络。
 
 考虑到TVM也是一个开发活跃的项目，我也建议把我的tutorial和python.tvm.relay.testing文件夹覆盖复制进你clone下来的TVM项目中。如果你觉得python.tvm.relay.testing中的代码和史老师那边开发文档中不一致的话，还是以python.tvm.relay.testing为准。
 
